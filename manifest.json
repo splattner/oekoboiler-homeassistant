@@ -1,6 +1,7 @@
 {
     "domain": "oekoboiler",
     "name": "OekoBoiler",
+    "version": "0.0.1",
     "documentation": "http://github.com/splattner/homeassistant-oekoboiler",
     "codeowners": ["@splattner"],
     "config_flow": true,
