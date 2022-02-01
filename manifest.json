@@ -1,0 +1,9 @@
+{
+    "domain": "oekoboiler",
+    "name": "OekoBoiler",
+    "documentation": "http://github.com/splattner/homeassistant-oekoboiler",
+    "codeowners": ["@splattner"],
+    "config_flow": true,
+    "iot_class": "calculated",
+    "loggers": ["oekoboiler"]
+  }
