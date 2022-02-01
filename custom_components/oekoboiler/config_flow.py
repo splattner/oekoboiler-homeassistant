@@ -60,7 +60,7 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): str,
         }
 
-        return self.async_show_form(step_id="camera",data_schema=vol.Schema(data_schema), errors=errors)
+        return self.async_show_form(step_id="user",data_schema=vol.Schema(data_schema), errors=errors)
 
 
     
