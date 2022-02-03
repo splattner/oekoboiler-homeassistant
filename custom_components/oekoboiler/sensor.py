@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*-
 import logging
 from typing import Callable, Union
 
@@ -11,15 +10,10 @@ from homeassistant.const import (
 
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
-
-
 from .const import DOMAIN
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-
 
 
 async def async_setup_entry(
@@ -43,7 +37,6 @@ async def async_setup_entry(
                 hass=hass,
             )
     )
-
 
     # Set Temp Sensor
     devices.append(OekoboilerSetTempSensorEntiry(
@@ -73,7 +66,7 @@ class OekoboilerModeSensorEntiry(SensorEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"mode"
+        return f"oekoboiler_mode"
 
     @property
     def available(self) -> bool:
@@ -117,7 +110,7 @@ class OekoboilerWaterTempSensorEntiry(SensorEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"water_temp"
+        return f"oekoboiler_water_temp"
 
     @property
     def available(self) -> bool:
@@ -152,7 +145,7 @@ class OekoboilerWaterTempSensorEntiry(SensorEntity):
         }
 
     async def async_update(self, **kwargs) -> None:
-        self._state = "Test Modus"
+        self._state = "0"
 
 class OekoboilerSetTempSensorEntiry(SensorEntity):
     def __init__(
@@ -173,7 +166,7 @@ class OekoboilerSetTempSensorEntiry(SensorEntity):
 
     @property
     def unique_id(self) -> str:
-        return f"set_temp"
+        return f"oekoboiler_set_temp"
 
     @property
     def available(self) -> bool:
@@ -207,4 +200,4 @@ class OekoboilerSetTempSensorEntiry(SensorEntity):
         }
 
     async def async_update(self, **kwargs) -> None:
-        self._state = "Test Modus"
+        self._state = "0"

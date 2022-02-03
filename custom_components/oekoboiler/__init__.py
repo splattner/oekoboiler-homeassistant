@@ -11,6 +11,7 @@ from homeassistant.const import (
     CONF_ENTITY_ID,
     CONF_NAME,
     CONF_SOURCE,
+    Platform,
 )
 
 from .const import DOMAIN
@@ -23,37 +24,22 @@ from homeassistant.helpers.entity_component import EntityComponent
 from homeassistant.helpers.typing import ConfigType
 
 
+PLATFORMS = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_setup(hass, config):
 
-SCAN_INTERVAL = timedelta(seconds=60)
+    _LOGGER.debug("oekoboiler setup started")
 
-
-
-SOURCE_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_ENTITY_ID): cv.entity_domain("camera"),
-        vol.Optional(CONF_NAME): cv.string,
-    }
-)
-
-PLATFORM_SCHEMA = cv.PLATFORM_SCHEMA.extend(
-    {
-        vol.Optional(CONF_SOURCE): vol.All(cv.ensure_list, [SOURCE_SCHEMA]),
-
-    }
-)
-PLATFORM_SCHEMA_BASE = cv.PLATFORM_SCHEMA_BASE.extend(PLATFORM_SCHEMA.schema)
-
-
+    return True
 
 async def async_setup_entry(hass, entry) -> bool:
 
+    _LOGGER.debug("oekoboiler setup entry started")
 
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    )
+
+    hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
