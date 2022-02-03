@@ -82,8 +82,8 @@ class OekoboilerModeSensorEntiry(SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
+            "identifiers": {(DOMAIN, "oekoboiler")},
+            "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
         }
@@ -138,8 +138,8 @@ class OekoboilerWaterTempSensorEntiry(SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
+            "identifiers": {(DOMAIN, "oekoboiler")},
+            "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
         }
@@ -193,8 +193,8 @@ class OekoboilerSetTempSensorEntiry(SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, self.unique_id)},
-            "name": self.name,
+            "identifiers": {(DOMAIN, "oekoboiler")},
+            "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
         }
