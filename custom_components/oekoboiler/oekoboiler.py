@@ -384,7 +384,7 @@ class Oekoboiler:
     def imageByteArray(self):
             
         img_byte_arr = io.BytesIO()
-        self._image.save(img_byte_arr, format='JPG')
+        self._image.save(img_byte_arr, format='JPEG')
         
         return img_byte_arr.getvalue()
 
