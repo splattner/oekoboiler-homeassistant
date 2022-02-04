@@ -110,11 +110,11 @@ class Oekoboiler:
         self._boundries = boundries
 
 
-    def processImage(self, image):
+    def processImage(self, original_image):
         _LOGGER.debug("Processing image")
 
-        w, h = image.size
-        image = ImageOps.deform(image, Deformer())
+        w, h = original_image.size
+        image = ImageOps.deform(original_image, Deformer())
 
         # Time
         # img_time = self.cropToBoundry(image, BOUNDRY_TIME)
@@ -198,12 +198,14 @@ class Oekoboiler:
         img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
         self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
+
+        self.updatedProcessedImage(original_image)
      
-    def updatedProcessedImage(self, image):
+    def updatedProcessedImage(self, original_image):
 
         _LOGGER.debug("Update processed Image")
 
-        image = ImageOps.deform(image, Deformer())
+        image = ImageOps.deform(original_image, Deformer())
 
         opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
 
