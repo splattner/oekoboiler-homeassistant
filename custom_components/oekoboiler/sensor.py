@@ -22,7 +22,7 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from .const import (
     DOMAIN,
-    DATA_OEKOBOILER_CLIENT
+    DATA_OEKOBOILER_CLIENT,
 )
 
 from. import OekoboilerEntity
@@ -128,7 +128,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 
         try:
             cameraImage = await camera.async_get_image(
-                self._camera_entity, timeout=self.timeout
+                self._camera_entity, timeout=self._timeout
             )
 
 

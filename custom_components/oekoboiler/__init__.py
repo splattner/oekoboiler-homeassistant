@@ -16,7 +16,8 @@ from homeassistant.const import (
 
 from .const import (
     DOMAIN,
-    DATA_OEKOBOILER_CLIENT
+    DATA_OEKOBOILER_CLIENT,
+    DEFAULT_TIMEOUT
 )
 
 from .oekoboiler import Oekoboiler
@@ -67,6 +68,8 @@ class OekoboilerEntity(Entity):
         self._entry = entry
         self._enabled_default = enabled_default
         self._available = True
+
+        self._timeout = DEFAULT_TIMEOUT
 
     @property
     def name(self) -> str:

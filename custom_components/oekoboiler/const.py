@@ -5,3 +5,5 @@ DOMAIN: str = "oekoboiler"
 CONF_CAMERA_ENTITY_ID: str = "Camera Entity ID"
 
 DATA_OEKOBOILER_CLIENT = "oekoboiler_client"
+
+DEFAULT_TIMEOUT = 10
