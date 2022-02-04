@@ -201,7 +201,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
         }
 
     async def async_update(self, **kwargs) -> None:
-        self._state = "0"
+        self._state = self._oekoboiler.waterTemperature
 
 class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
@@ -258,4 +258,4 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
         }
 
     async def async_update(self, **kwargs) -> None:
-        self._state = "0"
+        self._state = self._oekoboiler.setTemperature
