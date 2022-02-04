@@ -64,21 +64,19 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             # build client config
             self.device_config = user_input.copy()
+            camera_entity_id = user_input[CONF_CAMERA_ENTITY_ID]
 
-            # get device identifier slug
-            device_slug = "oekoboiler_{}".format(self.device_config[CONF_CAMERA_ENTITY_ID])
+            unique_id = "oekoboiler_{}".format(camera_entity_id)
+            await self.async_set_unique_id(unique_id)
+            self._abort_if_unique_id_configured()
 
-            # check if server is already known
-            if device_slug in configured_devices(self.hass):
-                errors["base"] = "already_configured"
-            else:
-                return self.async_create_entry(
-                    title="OekoBoiler Config",
-                    data={
-                        CONF_CAMERA_ENTITY_ID: self.device_config[CONF_CAMERA_ENTITY_ID],
 
-                    },
-                )
+
+
+            return self.async_create_entry(
+                title="OekoBoiler {}".format(camera_entity_id),
+                data=user_input
+            )
 
         data_schema = {
             vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): str,
@@ -110,4 +108,17 @@ class OekoBoilerOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(data_schema)
+        )
+
+    def _get_options_schema(self):
+        return vol.Schema(
+            {
+                vol.Optional(
+                    CONF_CAMERA_ENTITY_ID,
+                    default=self.config_entry.options.get(
+                        CONF_CAMERA_ENTITY_ID,
+                        self.config_entry.data.get(CONF_CAMERA_ENTITY_ID, ""),
+                    ),
+                )
+            }
         )
