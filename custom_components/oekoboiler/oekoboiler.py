@@ -179,8 +179,12 @@ class Oekoboiler:
         if (DRAW_SOURCE_REGION):
             for boundry in BOUNDRIES:
                 opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
+        
 
+        _LOGGER.debug("Saving processed Image")
         self._image = Image.fromarray(opencv_image)
+        w, h = self._image.size
+        _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
 
 
 
@@ -356,11 +360,16 @@ class Oekoboiler:
 
     @property
     def image(self):
+        _LOGGER.debug("Request Processes Image")
+
+       
         return self._image
 
     @property
     def imageByteArray(self):
-            
+        _LOGGER.debug("Request Processes Image as ByteArray")
+
+
         img_byte_arr = io.BytesIO()
         self._image.save(img_byte_arr, format='JPEG')
         
