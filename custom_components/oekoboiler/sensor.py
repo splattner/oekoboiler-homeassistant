@@ -122,7 +122,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 
     async def async_update(self, **kwargs) -> None:
 
-        camera = self.hass.components.camera
+        camera = self._hass.components.camera
         cameraImage = None
 
         try:
