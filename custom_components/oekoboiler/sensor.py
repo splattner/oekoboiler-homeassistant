@@ -4,7 +4,7 @@ from typing import Callable, Union
 
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
-from homeassistant.components.sensor import SensorEntity, CameraEntity
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
