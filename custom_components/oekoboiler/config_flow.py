@@ -111,7 +111,7 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
                 vol.Required(
                     CONF_CAMERA_ENTITY_ID,
                     default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID, self.config_entry.data.get(CONF_CAMERA_ENTITY_ID,"")),
-                ): vol.Any(cv.entity_id, cv.entity_domain(Camera.DOMAIN))
+                ): vol.Any(cv.entity_id, cv.entity_domain(Camera.DOMAIN)),
                 vol.Required(
                     CONF_BOUNDRY_TIME,
                     default=self.config_entry.options.get(CONF_BOUNDRY_TIME, self.config_entry.data.get(CONF_BOUNDRY_TIME,"")),
