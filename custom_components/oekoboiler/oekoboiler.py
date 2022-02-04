@@ -191,7 +191,7 @@ class Oekoboiler:
         
 
         _LOGGER.debug("Saving processed Image")
-        self._image = Image.fromarray(opencv_image)
+        self._image = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB) )
         w, h = self._image.size
         _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
 
