@@ -43,19 +43,6 @@ DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 155, 225, 185)
 DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 205, 225, 235)
 DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
 
-BOUNDRIES = [
-    DEFAULT_BOUNDRY_TIME,
-    DEFAULT_BOUNDRY_SETTEMP,
-    DEFAULT_BOUNDRY_WATERTEMP,
-    DEFAULT_BOUNDRY_MODE_AUTO,
-    DEFAULT_BOUNDRY_MODE_ECON,
-    DEFAULT_BOUNDRY_MODE_HEATER,
-    DEFAULT_BOUNDRY_INDICATOR_WARM,
-    DEFAULT_BOUNDRY_INDICATOR_HTG,
-    DEFAULT_BOUNDRY_INDICATOR_DEF,
-    DEFAULT_BOUNDRY_INDICATOR_OFF
-    ]
-
 THESHHOLD_ILLUMINATED = 0.66
 
 
@@ -108,6 +95,8 @@ class Oekoboiler:
     def setBoundries(self, boundries):
         _LOGGER.debug("Set new boundries")
         self._boundries = boundries
+
+        _LOGGER.debug("new Boundries {}".format(self._boundries))
 
 
     def processImage(self, original_image):
