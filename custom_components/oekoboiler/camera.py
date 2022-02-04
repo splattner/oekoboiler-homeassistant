@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import io
 from typing import Callable, Union
+import collections
 
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
@@ -66,7 +67,9 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
     ):
         self._hass: HomeAssistantType = hass
 
-        self._camera_entity = "camera.my_camera"
+        self.access_tokens: collections.deque = collections.deque([], 2)
+
+
         super().__init__(oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
 
 
@@ -116,7 +119,5 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
         w, h = oekoboilerDisplayImage.size
 
         _LOGGER.debug("Image captured from camera for processing in Oekoboiler Component. Image Size: w={}, h={}".format(w,h))
-
-        self._oekoboiler.processImage(oekoboilerDisplayImage)
 
         processedImage = self._oekoboiler.imageByteArray
