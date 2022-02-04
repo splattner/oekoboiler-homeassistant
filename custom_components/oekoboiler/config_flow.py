@@ -85,6 +85,11 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         }
 
         return self.async_show_form(step_id="user",data_schema=vol.Schema(data_schema), errors=errors)
+    
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return OekoBoilerOptionsFlowHandler(config_entry)
 
 
 class OekoBoilerOptionsFlowHandler(config_entries.OptionsFlow):
@@ -97,14 +102,12 @@ class OekoBoilerOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+
+        data_schema = {
+            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): str,
+        }
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        "show_things",
-                        default=self.config_entry.options.get("show_things"),
-                    ): bool
-                }
-            ),
+            data_schema=vol.Schema(data_schema)
         )
