@@ -4,6 +4,7 @@ from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
 
 import cv2 as cv
 import numpy
+from imutils import contours
 import imutils
 import logging
 
