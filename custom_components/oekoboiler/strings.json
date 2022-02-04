@@ -13,7 +13,17 @@
         "step": {
             "init": {
                 "data": {
-                    "camera_entity_id": "Camera Entity ID"
+                    "boundry_time": "Boundry Box for Time Display",
+                    "boundry_settemp": "Boundry Box for Set Temperature",
+                    "boundry_watertemp": "Boundry Box for Water Temperature",
+                    "boundry_mode_econ": "Boundry Box for Econ Mode",
+                    "boundry_mode_auto": "Boundry Box for Auto Mode",
+                    "boundry_mode_heater": "Boundry Box for Heater Mode",
+                    "boundry_indicator_warm": "Boundry Box for Warm Indicator",
+                    "boundry_indicator_def": "Boundry Box for Def Indicator",
+                    "boundry_indicator_htg": "Boundry Box for HTG Indicator",
+                    "boundry_indicator_off": "Boundry Box for Off Indicator"
+
                 }
             }
         }
