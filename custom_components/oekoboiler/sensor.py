@@ -138,14 +138,13 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 
 
         oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
-
         w, h = oekoboilerDisplayImage.size
 
-        _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
+        _LOGGER.debug("Image captured from camera for processing in Oekoboiler Component. Image Size: w={}, h={}".format(w,h))
 
-
-
-        self._state = "Test Modus"
+        self._oekoboiler.processImage(oekoboilerDisplayImage)
+        
+        self._state = self._oekoboiler.mode
 
 class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(

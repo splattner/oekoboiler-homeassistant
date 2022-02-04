@@ -5,6 +5,7 @@ from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
 import cv2 as cv
 import numpy
 import imutils
+import logging
 
 
 BLUE_START_THRESHOLD = 40
@@ -56,6 +57,9 @@ BOUNDRIES = [
 
 THESHHOLD_ILLUMINATED = 0.66
 
+
+_LOGGER = logging.getLogger(__name__)
+
 class Deformer:
 
     def getmesh(self, img):
@@ -85,6 +89,7 @@ class Oekoboiler:
         }
 
     def processImage(self, image):
+        _LOGGER.debug("Processing image")
 
         w, h = image.size
         image = ImageOps.deform(image, Deformer())
@@ -100,6 +105,9 @@ class Oekoboiler:
         img_setTemp = self._cropToBoundry(image, BOUNDRY_SETTEMP)
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
         cnts, digit, value = self._findDigits(opencv_setTemp, "Set Temp")
+
+        _LOGGER.debug("Set Temperature read: {}".format(value))
+
         self._setTemperature = value
 
 
@@ -107,6 +115,9 @@ class Oekoboiler:
         img_waterTemp = self._cropToBoundry(image, BOUNDRY_WATERTEMP)
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
         cnts, digits,value = self._findDigits(opencv_waterTemp)
+
+        _LOGGER.debug("Water Temperature read: {}".format(value))
+
         self._waterTemperature = value
 
 
@@ -134,6 +145,8 @@ class Oekoboiler:
 
         if modeHeater:
             self._mode = "Heater"
+
+        _LOGGER.debug("Mode read: {}".format(self._mode))
 
         # Indicators
         img_warmIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_WARM, removeBlue=True)
