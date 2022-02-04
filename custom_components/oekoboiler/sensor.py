@@ -137,7 +137,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
             return
 
 
-        oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage))).convert("RGB")
+        oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
 
         w, h = oekoboilerDisplayImage.size
 
