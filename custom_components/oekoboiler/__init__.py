@@ -1,10 +1,13 @@
 """Provides functionality to interact with an Oekoboiler"""
 import asyncio
+import io
 from datetime import timedelta
 import logging
 from typing import final
 
 import voluptuous as vol
+
+from PIL import Image
 
 from homeassistant.const import (
 
@@ -18,6 +21,7 @@ from .const import (
     DOMAIN,
     DATA_OEKOBOILER_CLIENT,
     DEFAULT_TIMEOUT,
+    CONF_CAMERA_ENTITY_ID,
     CONF_BOUNDRY_TIME,
     CONF_BOUNDRY_SETTEMP,
     CONF_BOUNDRY_WATERTEMP,
@@ -40,6 +44,8 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from homeassistant.components.camera import Camera
+
+from homeassistant.exceptions import HomeAssistantError
 
 PLATFORMS = [Platform.SENSOR, Platform.CAMERA]
 
@@ -103,6 +109,26 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
     oekoboiler.setBoundries(boundries)
+
+    camera = hass.components.camera
+    cameraImage = None
+
+    try:
+        cameraImage = await camera.async_get_image(
+            entry.data[CONF_CAMERA_ENTITY_ID], timeout=DEFAULT_TIMEOUT
+        )
+
+
+    except HomeAssistantError as err:
+        _LOGGER.error("Error on receive image from entity: %s", err)
+        return
+
+
+    oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
+    w, h = oekoboilerDisplayImage.size
+
+
+    oekoboiler.updatedProcessedImage(oekoboilerDisplayImage)
 
 
 

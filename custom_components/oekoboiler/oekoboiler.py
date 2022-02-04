@@ -25,7 +25,6 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DRAW_SOURCE_REGION = True
 DRAW_DIGIT_SEGMENTS = False
 DRAW_DIGIT_CONTURES = False
 DRAW_ILLUMINATION = False
@@ -199,22 +198,22 @@ class Oekoboiler:
         img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
         self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
-  
+     
+    def updatedProcessedImage(self, image):
 
-       
+        _LOGGER.debug("Update processed Image")
+
+        image = ImageOps.deform(image, Deformer())
+
         opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
 
-        if (DRAW_SOURCE_REGION):
-            for boundry in BOUNDRIES:
-                opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
-        
+        for boundry in BOUNDRIES:
+            opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
 
         _LOGGER.debug("Saving processed Image")
         self._image = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB) )
         w, h = self._image.size
         _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
-
-
 
     def _isIlluminated(self, image, title=""):
 
