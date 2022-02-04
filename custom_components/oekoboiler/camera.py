@@ -89,23 +89,4 @@ class OekoboilerProcessedImageCamera(OekoboilerCamera):
         """Return bytes of camera image."""
 
 
-        camera = self.hass.components.camera
-        cameraImage = None
-
-        try:
-            cameraImage = await camera.async_get_image(
-                self._camera_entity, timeout=self._timeout
-            )
-
-
-        except HomeAssistantError as err:
-            _LOGGER.error("Error on receive image from entity: %s", err)
-            return
-
-
-        oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
-        w, h = oekoboilerDisplayImage.size
-
-        _LOGGER.debug("Image captured from camera for processing in Oekoboiler Component. Image Size: w={}, h={}".format(w,h))
-
         processedImage = self._oekoboiler.imageByteArray
