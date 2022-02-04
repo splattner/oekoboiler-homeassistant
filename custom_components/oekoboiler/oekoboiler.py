@@ -114,7 +114,7 @@ class Oekoboiler:
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
-            _LOGGER.debug("Could not find digits for the Set Temperature value" + + repr(error)
+            _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
             self._setTemperature = None
 
 
@@ -129,7 +129,7 @@ class Oekoboiler:
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
-            _LOGGER.debug("Could not find digits for the Water Temperature value" + repr(error))
+            _LOGGER.debug("Could not find digits for the Water Temperature value: %s", exc_info=1)
             self._waterTemperature = None
 
 
