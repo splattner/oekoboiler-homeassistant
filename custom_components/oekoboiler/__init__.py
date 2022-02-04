@@ -58,21 +58,21 @@ async def async_setup_entry(hass, entry) -> bool:
 
     oekoboiler = Oekoboiler()
 
-    boundries = {
-            "time": tuple(map(int, entry.data[CONF_BOUNDRY_TIME].split(', '))),
-            "setTemp": tuple(map(int, entry.data[CONF_BOUNDRY_SETTEMP].split(', '))),
-            "waterTemp": tuple(map(int, entry.data[CONF_BOUNDRY_WATERTEMP].split(', '))),
-            "modeAuto": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_AUTO].split(', '))),
-            "modeEcon": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_ECON].split(', '))),
-            "modeHeater": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_HEATER].split(', '))),
-            "indicatorWarm": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_WARM].split(', '))),
-            "indicatorOff": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_OFF].split(', '))),
-            "indicatorHtg": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
-            "indicatorDef": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
+    # boundries = {
+    #         "time": tuple(map(int, entry.data[CONF_BOUNDRY_TIME].split(', '))),
+    #         "setTemp": tuple(map(int, entry.data[CONF_BOUNDRY_SETTEMP].split(', '))),
+    #         "waterTemp": tuple(map(int, entry.data[CONF_BOUNDRY_WATERTEMP].split(', '))),
+    #         "modeAuto": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_AUTO].split(', '))),
+    #         "modeEcon": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_ECON].split(', '))),
+    #         "modeHeater": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_HEATER].split(', '))),
+    #         "indicatorWarm": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_WARM].split(', '))),
+    #         "indicatorOff": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_OFF].split(', '))),
+    #         "indicatorHtg": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
+    #         "indicatorDef": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
 
-    }
+    # }
     
-    oekoboiler.setBoundries(boundries)
+    # oekoboiler.setBoundries(boundries)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
