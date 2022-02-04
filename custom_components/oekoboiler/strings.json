@@ -1,0 +1,21 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "data": {
+                    "camera_entity_id": "Camera Entity ID"
+                }
+            }
+        }
+    
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "camera_entity_id": "Camera Entity ID"
+                }
+            }
+        }
+    }
+}
