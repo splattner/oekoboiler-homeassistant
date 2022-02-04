@@ -64,11 +64,7 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
     ):
         self._hass: HomeAssistantType = hass
 
-        self._state: int = None
-
         self._camera_entity = "camera.my_camera"
-
-        self
         super().__init__(oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
 
 
