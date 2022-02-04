@@ -74,10 +74,10 @@ async def async_setup_entry(hass, entry) -> bool:
     
     oekoboiler.setBoundries(boundries)
 
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
+
     update_listener = entry.add_update_listener(async_update_options)
     hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER] = update_listener
-
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
