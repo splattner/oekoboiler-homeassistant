@@ -59,7 +59,7 @@ class OekoboilerEntity(Entity):
         self,
         oekoboiler: Oekoboiler,
         entry: ConfigEntry,
-        name: str,
+        name: str = "",
         enabled_default: bool = True
     ):
 

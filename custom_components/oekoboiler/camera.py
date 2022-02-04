@@ -4,7 +4,7 @@ from typing import Callable, Union
 
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
-from homeassistant.components.sensor import  CameraEntity
+from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
 
@@ -45,7 +45,6 @@ async def async_setup_entry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
-                name="Mode",
             )
     )
 
@@ -54,12 +53,11 @@ async def async_setup_entry(
 
 
 
-class OekoboilerCameraEntity(OekoboilerEntity, CameraEntity):
+class OekoboilerCameraEntity(OekoboilerEntity, Camera):
     def __init__(
         self,
         hass: HomeAssistantType,
         oekoboiler,
-        name,
         entry,
         *args,
         **kwargs,
@@ -69,7 +67,9 @@ class OekoboilerCameraEntity(OekoboilerEntity, CameraEntity):
         self._state: int = None
 
         self._camera_entity = "camera.my_camera"
-        super().__init__(oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
+
+        self
+        super().__init__(oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
 
 
     @property
