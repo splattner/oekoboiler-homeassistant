@@ -322,7 +322,7 @@ class Oekoboiler:
                 area = (xB - xA) * (yB - yA)
                 # if the total number of non-zero pixels is greater than
                 # 50% of the area, mark the segment as "on"
-                if total / float(area) > 0.5:
+                if area > 0 and total / float(area) > 0.5:
                     on[i]= 1
                     # if (DRAW_DIGIT_SEGMENTS):
                     #     im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,255,255),-1)
