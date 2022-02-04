@@ -80,6 +80,8 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
         self,
         hass: HomeAssistantType,
         oekoboiler,
+        name,
+        entry,
         *args,
         **kwargs,
     ):
@@ -88,7 +90,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
         self._state: int = None
 
         self._camera_entity = "camera.my_camera"
-        super().__init__(*args, **kwargs)
+        super().__init__(oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
 
 
     @property
@@ -150,14 +152,15 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
         self,
         hass: HomeAssistantType,
         oekoboiler,
-        camera_entity,
+        name,
+        entry,
         *args,
         **kwargs,
     ):
         self._hass: HomeAssistantType = hass
 
         self._state: int = None
-        super().__init__(*args, **kwargs)
+        super().__init__(oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
 
 
     @property
@@ -208,14 +211,15 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
         self,
         hass: HomeAssistantType,
         oekoboiler,
-        camera_entity,
+        name,
+        entry,
         *args,
         **kwargs,
     ):
         self._hass: HomeAssistantType = hass
 
         self._state: int = None
-        super().__init__(*args, **kwargs)
+        super().__init__(oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
 
 
     @property
