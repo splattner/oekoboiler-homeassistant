@@ -14,14 +14,18 @@ from homeassistant.const import (
     Platform,
 )
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    DATA_OEKOBOILER_CLIENT
+)
+
+from .oekoboiler import Oekoboiler
 
 from homeassistant.core import HomeAssistant
-
+from homeassistant.config_entries import ConfigEntry
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity import Entity
 
-from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.helpers.typing import ConfigType
 
 
 PLATFORMS = [Platform.SENSOR]
@@ -39,7 +43,42 @@ async def async_setup_entry(hass, entry) -> bool:
 
     _LOGGER.debug("oekoboiler setup entry started")
 
+    oekoboiler = Oekoboiler()
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
+
+
+class OekoboilerEntity(Entity):
+    """Define a base Oekoboiler Entity"""
+
+    def __init__(
+        self,
+        oekoboiler: Oekoboiler,
+        entry: ConfigEntry,
+        name: str,
+        enabled_default: bool = True
+    ):
+
+        self._oekoboiler = oekoboiler
+        self._name = name
+        self._entry = entry
+        self._enabled_default = enabled_default
+        self._available = True
+
+    @property
+    def name(self) -> str:
+        """Return the name of the entity."""
+        return self._name
+
+    @property
+    def entity_registry_enabled_default(self) -> bool:
+        """Return if the entity should be enabled when first added to the entity registry."""
+        return self._enabled_default
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        return self._available
