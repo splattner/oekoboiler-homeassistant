@@ -108,21 +108,30 @@ class Oekoboiler:
         # Set Temperature 
         img_setTemp = self._cropToBoundry(image, BOUNDRY_SETTEMP)
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
-        cnts, digit, value = self._findDigits(opencv_setTemp, "Set Temp")
 
-        _LOGGER.debug("Set Temperature read: {}".format(value))
+        try:
+            cnts, digit, value = self._findDigits(opencv_setTemp, "Set Temp")
+            _LOGGER.debug("Set Temperature read: {}".format(value))
+            self._setTemperature = value
+        except Exception as error:
+            _LOGGER.debug("Could not find digits for the Set Temperature value" + + repr(error)
+            self._setTemperature = None
 
-        self._setTemperature = value
+
 
 
         # Water Temperature
         img_waterTemp = self._cropToBoundry(image, BOUNDRY_WATERTEMP)
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
-        cnts, digits,value = self._findDigits(opencv_waterTemp)
 
-        _LOGGER.debug("Water Temperature read: {}".format(value))
+        try:
+            cnts, digits,value = self._findDigits(opencv_waterTemp)
+            _LOGGER.debug("Water Temperature read: {}".format(value))
+            self._waterTemperature = value
+        except Exception as error:
+            _LOGGER.debug("Could not find digits for the Water Temperature value" + repr(error))
+            self._waterTemperature = None
 
-        self._waterTemperature = value
 
 
         # Modus
@@ -200,14 +209,11 @@ class Oekoboiler:
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, 7))
         thresh = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
 
-
-
         nonZeroValue = cv.countNonZero(thresh)
 
         #print ("NonZero {}, Threshhold {}".format(nonZeroValue, threshold))
 
         # if DRAW_ILLUMINATION and nonZeroValue > threshold:
-            
         #     h, w = image.shape[:2]
         #     im = cv.rectangle(image,(0,0),(w,h),(0,255,0),11)
 
@@ -231,17 +237,21 @@ class Oekoboiler:
 
         cnts = imutils.grab_contours(cnts)
         digitCnts = []
+
+        if len(cnts) == 0:
+            raise Exception("No Contures Found")
+
     
         # loop over the digit area candidates
         for c in cnts:
-
-            #print(c)
         
             # compute the bounding box of the contour
             (x, y, w, h) = cv.boundingRect(c)
             # if the contour is sufficiently large, it must be a digit
             #if w >= 15 and (h >= 40 and h <= 90):
             digitCnts.append(c)
+
+
         
         digitCnts = contours.sort_contours(digitCnts, method="left-to-right")[0]
         digits = []
@@ -250,18 +260,11 @@ class Oekoboiler:
             # extract the digit ROI
             (x, y, w, h) = cv.boundingRect(c)
 
-            #print("x {} y {} w {} h {}".format(x,y,w,h))
-
-
             if w <= 15:
                 # its most sury a 1 Digit and we need to increase
                 # the conture for the segments matching to have the full segment
                 x = int(x - (w*2.5))
                 w = int(w * 3.5)
-
-                #print("x {} y {} w {} h {}".format(x,y,w,h))
-
-            
 
             # if (DRAW_DIGIT_CONTURES):
             #     im = cv.rectangle(im,(x,y),(x+w-1,y+h-1),(0,255,0),1)

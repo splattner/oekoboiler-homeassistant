@@ -30,8 +30,6 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 
 from homeassistant.components.camera import Camera
 
-
-
 PLATFORMS = [Platform.SENSOR, Platform.CAMERA]
 
 _LOGGER = logging.getLogger(__name__)
