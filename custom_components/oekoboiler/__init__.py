@@ -29,7 +29,7 @@ from homeassistant.helpers.entity import Entity
 
 
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.Camera]
 
 _LOGGER = logging.getLogger(__name__)
 

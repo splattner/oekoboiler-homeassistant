@@ -7,6 +7,7 @@ import numpy
 from imutils import contours
 import imutils
 import logging
+import io
 
 
 BLUE_START_THRESHOLD = 40
@@ -89,11 +90,14 @@ class Oekoboiler:
             "htg": False
         }
 
+        self._image = None
+
     def processImage(self, image):
         _LOGGER.debug("Processing image")
 
         w, h = image.size
         image = ImageOps.deform(image, Deformer())
+        self._image = image
 
         # Time
         # img_time = self.cropToBoundry(image, BOUNDRY_TIME)
@@ -172,10 +176,16 @@ class Oekoboiler:
 
        
         
-        # opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
-        # if (DRAW_SOURCE_REGION):
-        #     for boundry in BOUNDRIES:
-        #         opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
+        opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
+
+        if (DRAW_SOURCE_REGION):
+            for boundry in BOUNDRIES:
+                opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
+
+        self._image = Image.fromarray(opencv_image)
+
+
+        
         # cv.imshow("Full Image", opencv_image)
         # cv.imshow("Time", opencv_time)
         # cv.imshow("Set Temperature", opencv_setTemp)
@@ -365,6 +375,19 @@ class Oekoboiler:
     @property
     def indicator(self):
         return self._indicator
+
+    @property
+    def image(self):
+        return self._image
+
+    @property
+    def imageByteArray(self):
+            
+        img_byte_arr = io.BytesIO()
+        self._image.save(img_byte_arr, format='JPG')
+        
+        return img_byte_arr.getvalue()
+
 
 
 if __name__ == "__main__":
