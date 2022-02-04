@@ -1,7 +1,14 @@
 import voluptuous as vol
 
-from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.data_entry_flow import FlowResult
+
+import homeassistant.helpers.config_validation as cv
+
+from homeassistant.components.camera import Camera
+
+
 from .const import (
     DOMAIN,
     CONF_CAMERA_ENTITY_ID,
@@ -18,17 +25,7 @@ from .const import (
 )
 
 
-@callback
-def configured_devices(hass):
-    """return a set of all configured oekoboiler instances"""
-    configuered_devices = list()
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        configuered_devices.append("oekoboiler_{}".format(entry.data[CONF_CAMERA_ENTITY_ID]))
-
-    return configuered_devices
-
-
-class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
     """handle a OekoBoiler config flow"""
 
     def __init__(self, *args, **kwargs):
@@ -52,7 +49,7 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         }
         super().__init__(*args, **kwargs)
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(self, user_input=None) -> FlowResult:
         """handle the start of the config flow"""
 
         errors = {}
@@ -77,7 +74,7 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         data_schema = {
-            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): str,
+            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): vol.Any(cv.entiry_id, cv.entity_domain(Camera.DOMAIN)),
             vol.Required(CONF_BOUNDRY_TIME, default=self.device_config[CONF_BOUNDRY_TIME]): str,
             vol.Required(CONF_BOUNDRY_SETTEMP, default=self.device_config[CONF_BOUNDRY_SETTEMP]): str,
             vol.Required(CONF_BOUNDRY_WATERTEMP, default=self.device_config[CONF_BOUNDRY_WATERTEMP]): str,
@@ -99,26 +96,66 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return OekoBoilerOptionsFlowHandler(config_entry)
 
 
-class OekoBoilerOptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
+class OekoBoilerOptionsFlowHandler(OptionsFlow):
+    def __init__(self, config_entry: ConfigEntry):
         """Initialize options flow."""
         self.config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(self, user_input=None) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_CAMERA_ENTITY_ID,
+                    default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID, self.config_entry.data.get(CONF_CAMERA_ENTITY_ID,"")),
+                ): vol.Any(cv.entiry_id, cv.entity_domain(Camera.DOMAIN))
+                vol.Required(
+                    CONF_BOUNDRY_TIME,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_TIME, self.config_entry.data.get(CONF_BOUNDRY_TIME,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_SETTEMP,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, self.config_entry.data.get(CONF_BOUNDRY_SETTEMP,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_WATERTEMP,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_WATERTEMP, self.config_entry.data.get(CONF_BOUNDRY_WATERTEMP,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_MODE_ECON,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_ECON, self.config_entry.data.get(CONF_BOUNDRY_MODE_ECON,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_MODE_AUTO,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, self.config_entry.data.get(CONF_BOUNDRY_MODE_AUTO,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_MODE_HEATER,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, self.config_entry.data.get(CONF_BOUNDRY_MODE_HEATER,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_INDICATOR_WARM,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_WARM,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_INDICATOR_HTG,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_HTG,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_INDICATOR_DEF,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_DEF,"")),
+                ): str,
+                vol.Required(
+                    CONF_BOUNDRY_INDICATOR_OFF,
+                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_OFF,"")),
+                ): str,
+            }
+        )
 
         return self.async_show_form(
             step_id="init",
-            data_schema=self._get_options_schema
-        )
-
-    def _get_options_schema(self):
-        return vol.Schema(
-            {
-                vol.Required(CONF_CAMERA_ENTITY_ID,default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID,self.config_entry.data.get(CONF_CAMERA_ENTITY_ID, ""))): str,
-
-            }
+            data_schema=data_schema
         )
