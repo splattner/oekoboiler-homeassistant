@@ -106,56 +106,55 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        data_schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_CAMERA_ENTITY_ID,
-                    default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID, self.config_entry.data.get(CONF_CAMERA_ENTITY_ID,"")),
-                ): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
-                vol.Required(
-                    CONF_BOUNDRY_TIME,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_TIME, self.config_entry.data.get(CONF_BOUNDRY_TIME,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_SETTEMP,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, self.config_entry.data.get(CONF_BOUNDRY_SETTEMP,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_WATERTEMP,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_WATERTEMP, self.config_entry.data.get(CONF_BOUNDRY_WATERTEMP,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_MODE_ECON,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_ECON, self.config_entry.data.get(CONF_BOUNDRY_MODE_ECON,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_MODE_AUTO,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, self.config_entry.data.get(CONF_BOUNDRY_MODE_AUTO,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_MODE_HEATER,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, self.config_entry.data.get(CONF_BOUNDRY_MODE_HEATER,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_INDICATOR_WARM,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_WARM,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_INDICATOR_HTG,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_HTG,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_INDICATOR_DEF,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_DEF,"")),
-                ): str,
-                vol.Required(
-                    CONF_BOUNDRY_INDICATOR_OFF,
-                    default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_OFF,"")),
-                ): str,
-            }
-        )
+        options = {
+            vol.Required(
+                CONF_CAMERA_ENTITY_ID,
+                default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID, self.config_entry.data.get(CONF_CAMERA_ENTITY_ID,"")),
+            ): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
+            vol.Required(
+                CONF_BOUNDRY_TIME,
+                default=self.config_entry.options.get(CONF_BOUNDRY_TIME, self.config_entry.data.get(CONF_BOUNDRY_TIME,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_SETTEMP,
+                default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, self.config_entry.data.get(CONF_BOUNDRY_SETTEMP,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_WATERTEMP,
+                default=self.config_entry.options.get(CONF_BOUNDRY_WATERTEMP, self.config_entry.data.get(CONF_BOUNDRY_WATERTEMP,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_MODE_ECON,
+                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_ECON, self.config_entry.data.get(CONF_BOUNDRY_MODE_ECON,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_MODE_AUTO,
+                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, self.config_entry.data.get(CONF_BOUNDRY_MODE_AUTO,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_MODE_HEATER,
+                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, self.config_entry.data.get(CONF_BOUNDRY_MODE_HEATER,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_INDICATOR_WARM,
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_WARM,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_INDICATOR_HTG,
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_HTG,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_INDICATOR_DEF,
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_DEF,"")),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_INDICATOR_OFF,
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_OFF,"")),
+            ): cv.string,
+        }
+        
 
         return self.async_show_form(
             step_id="init",
-            data_schema=data_schema
+            data_schema=vol.Schema(options)
         )
