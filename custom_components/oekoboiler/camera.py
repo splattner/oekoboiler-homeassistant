@@ -7,6 +7,7 @@ import collections
 
 from PIL import Image, ImageDraw, UnidentifiedImageError
 
+from homeassistant.components.stream import Stream, create_stream
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
