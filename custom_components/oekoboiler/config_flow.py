@@ -78,6 +78,7 @@ class OekoBoilerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = {
             vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): str,
+            vol.Required(CONF_BOUNDRY_TIME, default=self.device_config[CONF_BOUNDRY_TIME]): str,
             vol.Required(CONF_BOUNDRY_SETTEMP, default=self.device_config[CONF_BOUNDRY_SETTEMP]): str,
             vol.Required(CONF_BOUNDRY_WATERTEMP, default=self.device_config[CONF_BOUNDRY_WATERTEMP]): str,
             vol.Required(CONF_BOUNDRY_MODE_ECON, default=self.device_config[CONF_BOUNDRY_MODE_ECON]): str,
@@ -121,6 +122,12 @@ class OekoBoilerOptionsFlowHandler(config_entries.OptionsFlow):
                         default=self.config_entry.options.get(
                         CONF_CAMERA_ENTITY_ID,
                         self.config_entry.data.get(CONF_CAMERA_ENTITY_ID, ""),
+                    ),
+                ),
+                vol.Required(CONF_BOUNDRY_TIME,
+                        default=self.config_entry.options.get(
+                        CONF_BOUNDRY_TIME,
+                        self.config_entry.data.get(CONF_BOUNDRY_TIME, ""),
                     ),
                 ),
                 vol.Required(CONF_BOUNDRY_SETTEMP,

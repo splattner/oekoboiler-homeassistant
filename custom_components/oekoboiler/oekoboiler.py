@@ -30,31 +30,31 @@ DRAW_DIGIT_SEGMENTS = False
 DRAW_DIGIT_CONTURES = False
 DRAW_ILLUMINATION = False
 
-BOUNDRY_TIME = (230, 170, 455, 270)
+DEFAULT_BOUNDRY_TIME = (230, 170, 455, 270)
 
-BOUNDRY_SETTEMP = (485, 145, 550, 215)
-BOUNDRY_WATERTEMP = (485, 265, 555, 328)
+DEFAULT_BOUNDRY_SETTEMP = (485, 145, 550, 215)
+DEFAULT_BOUNDRY_WATERTEMP = (485, 265, 555, 328)
 
-BOUNDRY_MODE_ECON = (20, 140, 155, 170)
-BOUNDRY_MODE_AUTO = (20, 210, 155, 240)
-BOUNDRY_MODE_HEATER = (20, 280, 155, 310)
+DEFAULT_BOUNDRY_MODE_ECON = (20, 140, 155, 170)
+DEFAULT_BOUNDRY_MODE_AUTO = (20, 210, 155, 240)
+DEFAULT_BOUNDRY_MODE_HEATER = (20, 280, 155, 310)
 
-BOUNDRY_INDICATOR_WARM = (170, 250, 225, 275)
-BOUNDRY_INDICATOR_HTG = (170, 155, 225, 185)
-BOUNDRY_INDICATOR_DEF = (170, 205, 225, 235)
-BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
+DEFAULT_BOUNDRY_INDICATOR_WARM = (170, 250, 225, 275)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 155, 225, 185)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 205, 225, 235)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
 
 BOUNDRIES = [
-    BOUNDRY_TIME,
-    BOUNDRY_SETTEMP,
-    BOUNDRY_WATERTEMP,
-    BOUNDRY_MODE_AUTO,
-    BOUNDRY_MODE_ECON,
-    BOUNDRY_MODE_HEATER,
-    BOUNDRY_INDICATOR_WARM,
-    BOUNDRY_INDICATOR_HTG,
-    BOUNDRY_INDICATOR_DEF,
-    BOUNDRY_INDICATOR_OFF
+    DEFAULT_BOUNDRY_TIME,
+    DEFAULT_BOUNDRY_SETTEMP,
+    DEFAULT_BOUNDRY_WATERTEMP,
+    DEFAULT_BOUNDRY_MODE_AUTO,
+    DEFAULT_BOUNDRY_MODE_ECON,
+    DEFAULT_BOUNDRY_MODE_HEATER,
+    DEFAULT_BOUNDRY_INDICATOR_WARM,
+    DEFAULT_BOUNDRY_INDICATOR_HTG,
+    DEFAULT_BOUNDRY_INDICATOR_DEF,
+    DEFAULT_BOUNDRY_INDICATOR_OFF
     ]
 
 THESHHOLD_ILLUMINATED = 0.66
@@ -90,7 +90,25 @@ class Oekoboiler:
             "htg": False
         }
 
+        self._boundries = {
+            "time": DEFAULT_BOUNDRY_TIME,
+            "setTemp": DEFAULT_BOUNDRY_SETTEMP,
+            "waterTemp": DEFAULT_BOUNDRY_WATERTEMP,
+            "modeAuto": DEFAULT_BOUNDRY_MODE_AUTO,
+            "modeEcon": DEFAULT_BOUNDRY_MODE_ECON,
+            "modeHeater": DEFAULT_BOUNDRY_MODE_HEATER,
+            "indicatorWarm": DEFAULT_BOUNDRY_INDICATOR_WARM,
+            "indicatorOff": DEFAULT_BOUNDRY_INDICATOR_OFF,
+            "indicatorHtg": DEFAULT_BOUNDRY_INDICATOR_HTG,
+            "indicatorDef": DEFAULT_BOUNDRY_INDICATOR_DEF,
+
+        }
+
         self._image = None
+
+    def setBoundries(self, boundries):
+        self._boundries = boundries
+
 
     def processImage(self, image):
         _LOGGER.debug("Processing image")
@@ -106,7 +124,7 @@ class Oekoboiler:
 
 
         # Set Temperature 
-        img_setTemp = self._cropToBoundry(image, BOUNDRY_SETTEMP)
+        img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
@@ -121,7 +139,7 @@ class Oekoboiler:
 
 
         # Water Temperature
-        img_waterTemp = self._cropToBoundry(image, BOUNDRY_WATERTEMP)
+        img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
@@ -135,17 +153,17 @@ class Oekoboiler:
 
 
         # Modus
-        img_modeAuto = self._cropToBoundry(image, BOUNDRY_MODE_AUTO)
+        img_modeAuto = self._cropToBoundry(image, self._boundries["modeAuto"])
         opencv_modeAuto = cv.cvtColor(numpy.array(img_modeAuto), cv.COLOR_RGB2BGR)
         modeAuto = self._isIlluminated(opencv_modeAuto)
 
 
-        img_modeEcon = self._cropToBoundry(image, BOUNDRY_MODE_ECON)
+        img_modeEcon = self._cropToBoundry(image, self._boundries["modeEcon"])
         opencv_modeEcon = cv.cvtColor(numpy.array(img_modeEcon), cv.COLOR_RGB2BGR)
         modeEcon = self._isIlluminated(opencv_modeEcon)
 
 
-        img_modeHeater = self._cropToBoundry(image, BOUNDRY_MODE_HEATER)
+        img_modeHeater = self._cropToBoundry(image, self._boundries["modeHeater"])
         opencv_modeHeater = cv.cvtColor(numpy.array(img_modeHeater), cv.COLOR_RGB2BGR)
         modeHeater = self._isIlluminated(opencv_modeHeater)
 
@@ -162,22 +180,22 @@ class Oekoboiler:
         _LOGGER.debug("Mode read: {}".format(self._mode))
 
         # Indicators
-        img_warmIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_WARM, removeBlue=True)
+        img_warmIndicator = self._cropToBoundry(image, self._boundries["indicatorWarm"], removeBlue=True)
         opencv_warmIndicator= cv.cvtColor(numpy.array(img_warmIndicator), cv.COLOR_RGB2BGR)
         self._indicator["warm"] = self._isIlluminated(opencv_warmIndicator, "warm")
 
 
-        img_defIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_DEF, removeBlue=True)
+        img_defIndicator = self._cropToBoundry(image, self._boundries["indicatorDef"], removeBlue=True)
         opencv_defIndicator= cv.cvtColor(numpy.array(img_defIndicator), cv.COLOR_RGB2BGR)
         self._indicator["def"] = self._isIlluminated(opencv_defIndicator, "def")
 
 
-        img_htgIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_HTG, removeBlue=True)
+        img_htgIndicator = self._cropToBoundry(image, self._boundries["indicatorHtg"], removeBlue=True)
         opencv_htgIndicator= cv.cvtColor(numpy.array(img_htgIndicator), cv.COLOR_RGB2BGR)
         self._indicator["htg"] = self._isIlluminated(opencv_htgIndicator, "htg")
 
 
-        img_offIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_OFF, removeBlue=True)
+        img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
         self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
   
