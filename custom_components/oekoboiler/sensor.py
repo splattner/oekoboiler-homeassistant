@@ -47,6 +47,8 @@ async def async_setup_entry(
     devices.append(OekoboilerModeSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
+                entry=entry,
+                name="Mode",
             )
     )
 
@@ -54,6 +56,8 @@ async def async_setup_entry(
     devices.append(OekoboilerWaterTempSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
+                entry=entry,
+                name="Water Temperature"
             )
     )
 
@@ -61,6 +65,8 @@ async def async_setup_entry(
     devices.append(OekoboilerSetTempSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
+                entry=entry,
+                name="Set Temperature"
                 
             )
     )
