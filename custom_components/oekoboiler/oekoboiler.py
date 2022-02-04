@@ -107,6 +107,7 @@ class Oekoboiler:
         self._image = None
 
     def setBoundries(self, boundries):
+        _LOGGER.debug("Set new boundries")
         self._boundries = boundries
 
 
