@@ -389,10 +389,14 @@ class Oekoboiler:
     def imageByteArray(self):
         _LOGGER.debug("Request Processes Image as ByteArray")
 
-        img_byte_arr = io.BytesIO()
-        self._image.save(img_byte_arr, format='JPEG')
+        if self._image is not None:
+
+            img_byte_arr = io.BytesIO()
+            self._image.save(img_byte_arr, format='JPEG')
         
-        return img_byte_arr.getvalue()
+            return img_byte_arr.getvalue()
+
+        return None
 
 
 
