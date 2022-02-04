@@ -60,7 +60,7 @@ THESHHOLD_ILLUMINATED = 0.66
 class Deformer:
 
     def getmesh(self, img):
-        w, h = im.size
+        w, h = img.size
 
         return [(
                 # target rectangle
@@ -336,6 +336,22 @@ class Oekoboiler:
         output = image.crop(boundry)
 
         return output
+
+    @property
+    def setTemperature(self):
+        return self._setTemperature
+
+    @property
+    def waterTemperature(self):
+        return self._waterTemperature
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @property
+    def indicator(self):
+        return self._indicator
 
 
 if __name__ == "__main__":

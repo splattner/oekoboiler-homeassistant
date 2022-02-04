@@ -8,7 +8,7 @@
     "iot_class": "calculated",
     "loggers": ["oekoboiler"],
     "requirements": [
-      "opencv-python-headless==4.5.5.62",
+      "opencv-python-headless==4.5.2.54",
       "numpy==1.21.4",
       "pillow==9.0.0"
     ]
