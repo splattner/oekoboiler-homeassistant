@@ -128,7 +128,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 
         try:
             cameraImage = await camera.async_get_image(
-                self.camera_entity, timeout=self.timeout
+                self._camera_entity, timeout=self.timeout
             )
 
 
