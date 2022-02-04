@@ -95,9 +95,7 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
         }
 
     async def async_camera_image(
-        self, 
-        width: int | None = None, 
-        height: int | None = None
+        self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return bytes of camera image."""
 
