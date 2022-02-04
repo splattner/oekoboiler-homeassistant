@@ -90,3 +90,5 @@ class OekoboilerProcessedImageCamera(OekoboilerCamera):
 
 
         processedImage = self._oekoboiler.imageByteArray
+
+        return processedImage
