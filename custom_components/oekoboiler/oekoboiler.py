@@ -202,7 +202,7 @@ class Oekoboiler:
 
         for key, value in self._boundries.items():
             opencv_image = cv.rectangle(opencv_image,(value[0], value[1]),(value[2], value[3]),(0,255,0),1)
-            opencv_image = cv.putText(opencv_image, key, (value[0], value[1]), cv.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 1, cv.LINE_AA)
+            opencv_image = cv.putText(opencv_image, key, (value[0], value[1]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv.LINE_AA)
 
         _LOGGER.debug("Saving processed Image")
         self._image = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB) )
