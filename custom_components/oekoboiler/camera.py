@@ -30,6 +30,8 @@ from. import OekoboilerEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+DEFAULT_CONTENT_TYPE: Final = "image/jpeg"
+
 
 async def async_setup_entry(
     hass: HomeAssistantType, 
@@ -67,7 +69,12 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
     ):
         self._hass: HomeAssistantType = hass
 
+        self.stream: Stream | None = None
+        self.stream_options: dict[str, str] = {}
+        self.content_type: str = DEFAULT_CONTENT_TYPE
         self.access_tokens: collections.deque = collections.deque([], 2)
+        self._create_stream_lock: asyncio.Lock | None = None
+        self._rtsp_to_webrtc = False
 
 
         super().__init__(oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
