@@ -97,7 +97,6 @@ class Oekoboiler:
 
         w, h = image.size
         image = ImageOps.deform(image, Deformer())
-        self._image = image
 
         # Time
         # img_time = self.cropToBoundry(image, BOUNDRY_TIME)
@@ -175,7 +174,6 @@ class Oekoboiler:
   
 
        
-        
         opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
 
         if (DRAW_SOURCE_REGION):
@@ -183,18 +181,6 @@ class Oekoboiler:
                 opencv_image = cv.rectangle(opencv_image,(boundry[0], boundry[1]),(boundry[2], boundry[3]),(0,255,0),1)
 
         self._image = Image.fromarray(opencv_image)
-
-
-        
-        # cv.imshow("Full Image", opencv_image)
-        # cv.imshow("Time", opencv_time)
-        # cv.imshow("Set Temperature", opencv_setTemp)
-        # cv.imshow("Water Temperatur", opencv_waterTemp)
-        # cv.imshow("Auto Modus", opencv_modeAuto)
-        # cv.imshow("Econ Modus", opencv_modeEcon)
-        # cv.imshow("Heater Modus", opencv_modeHeater)
-        # cv.imshow("Warm Indicator", opencv_warmIndicator)
-        # cv.waitKey()
 
 
 
@@ -210,8 +196,7 @@ class Oekoboiler:
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, 7))
         thresh = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
 
-        #cv.imshow("Gray {}".format(title), gray)
-        #cv.imshow("Thres {}".format(title), thresh)
+
 
         nonZeroValue = cv.countNonZero(thresh)
 
@@ -228,8 +213,6 @@ class Oekoboiler:
     def _findDigits(self, image, title=""):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-        #blurred = cv.GaussianBlur(gray, (5, 5), 0)
-        #edged = cv.Canny(blurred, 50, 200, 255)
 
         # theshhold and morphological for cleanup
         thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
@@ -238,8 +221,6 @@ class Oekoboiler:
 
         im_seg = image.copy()
 
-        #cv.imshow("Gray {}".format(title), gray)
-        #cv.imshow("Thres {}".format(title), thresh)
 
         # find contours
         cnts = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
@@ -336,9 +317,6 @@ class Oekoboiler:
         num_digits = len(digits)
         for i in range(num_digits):
             value = value + digits[i] * (10**(num_digits-1-i))
-
-        # if (DRAW_DIGIT_SEGMENTS):
-        #     cv.imshow("Seg {}".format(title), im_seg)
 
         return digitCnts, digits, value
 
