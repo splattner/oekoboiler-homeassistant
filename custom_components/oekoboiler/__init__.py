@@ -26,6 +26,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+
+from homeassistant.components.camera import Camera
 
 
 
@@ -57,12 +60,13 @@ class OekoboilerEntity(Entity):
 
     def __init__(
         self,
+        hass: HomeAssistantType,
         oekoboiler: Oekoboiler,
         entry: ConfigEntry,
         name: str = "",
         enabled_default: bool = True
     ):
-
+        self._hass = hass
         self._oekoboiler = oekoboiler
         self._name = name
         self._entry = entry
@@ -85,3 +89,17 @@ class OekoboilerEntity(Entity):
     def available(self) -> bool:
         """Return True if entity is available."""
         return self._available
+
+class OekoboilerCamera(Camera):
+
+    def __init__(
+        self,
+        hass: HomeAssistantType,
+        oekoboiler: Oekoboiler,
+        entry: ConfigEntry,
+    ):
+        self._hass = hass
+        self._oekoboiler = oekoboiler
+        self._entry = entry
+
+        super().__init__()

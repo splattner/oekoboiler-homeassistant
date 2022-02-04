@@ -1,38 +1,26 @@
 from __future__ import annotations
 
 import logging
-import asyncio
+
 import io
 from typing import Callable, Union
-import collections
 
-from PIL import Image, ImageDraw, UnidentifiedImageError
+from PIL import Image
 
-from homeassistant.components.stream import Stream, create_stream
-from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
 
-
-from homeassistant.components.image_processing import (
-    CONF_CONFIDENCE,
-    PLATFORM_SCHEMA,
-    ImageProcessingEntity,
-)
-
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.helpers.typing import HomeAssistantType
 
 from .const import (
     DOMAIN,
     DATA_OEKOBOILER_CLIENT,
 )
 
-from. import OekoboilerEntity
+from. import OekoboilerCamera
 
 
 _LOGGER = logging.getLogger(__name__)
-
-DEFAULT_CONTENT_TYPE: Final = "image/jpeg"
 
 
 async def async_setup_entry(
@@ -48,7 +36,7 @@ async def async_setup_entry(
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
 
     # Mode Sensor
-    devices.append(OekoboilerCameraEntity(
+    devices.append(OekoboilerProcessedImageCamera(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -60,7 +48,7 @@ async def async_setup_entry(
 
 
 
-class OekoboilerCameraEntity(OekoboilerEntity, Camera):
+class OekoboilerProcessedImageCamera(OekoboilerCamera):
     def __init__(
         self,
         hass: HomeAssistantType,
@@ -69,17 +57,8 @@ class OekoboilerCameraEntity(OekoboilerEntity, Camera):
         *args,
         **kwargs,
     ):
-        self._hass: HomeAssistantType = hass
 
-        self.stream: Stream | None = None
-        self.stream_options: dict[str, str] = {}
-        self.content_type: str = DEFAULT_CONTENT_TYPE
-        self.access_tokens: collections.deque = collections.deque([], 2)
-        self._create_stream_lock: asyncio.Lock | None = None
-        self._rtsp_to_webrtc = False
-
-
-        super().__init__(oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
+        super().__init__(hass=hass, oekoboiler=oekoboiler, entry=entry, *args, **kwargs)
 
 
     @property
