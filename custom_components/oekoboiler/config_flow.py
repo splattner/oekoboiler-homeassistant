@@ -74,18 +74,7 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         data_schema = {
-            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): vol.Any(cv.entiry_id, cv.entity_domain(Camera.DOMAIN)),
-            vol.Required(CONF_BOUNDRY_TIME, default=self.device_config[CONF_BOUNDRY_TIME]): str,
-            vol.Required(CONF_BOUNDRY_SETTEMP, default=self.device_config[CONF_BOUNDRY_SETTEMP]): str,
-            vol.Required(CONF_BOUNDRY_WATERTEMP, default=self.device_config[CONF_BOUNDRY_WATERTEMP]): str,
-            vol.Required(CONF_BOUNDRY_MODE_ECON, default=self.device_config[CONF_BOUNDRY_MODE_ECON]): str,
-            vol.Required(CONF_BOUNDRY_MODE_AUTO, default=self.device_config[CONF_BOUNDRY_MODE_AUTO]): str,
-            vol.Required(CONF_BOUNDRY_MODE_HEATER, default=self.device_config[CONF_BOUNDRY_MODE_HEATER]): str,
-            vol.Required(CONF_BOUNDRY_INDICATOR_WARM, default=self.device_config[CONF_BOUNDRY_INDICATOR_WARM]): str,
-            vol.Required(CONF_BOUNDRY_INDICATOR_HTG, default=self.device_config[CONF_BOUNDRY_INDICATOR_HTG]): str,
-            vol.Required(CONF_BOUNDRY_INDICATOR_DEF, default=self.device_config[CONF_BOUNDRY_INDICATOR_DEF]): str,
-            vol.Required(CONF_BOUNDRY_INDICATOR_OFF, default=self.device_config[CONF_BOUNDRY_INDICATOR_OFF]): str,
-
+            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
         }
 
         return self.async_show_form(step_id="user",data_schema=vol.Schema(data_schema), errors=errors)
@@ -107,10 +96,6 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         options = {
-            vol.Required(
-                CONF_CAMERA_ENTITY_ID,
-                default=self.config_entry.options.get(CONF_CAMERA_ENTITY_ID, self.config_entry.data.get(CONF_CAMERA_ENTITY_ID,"")),
-            ): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
             vol.Required(
                 CONF_BOUNDRY_TIME,
                 default=self.config_entry.options.get(CONF_BOUNDRY_TIME, self.config_entry.data.get(CONF_BOUNDRY_TIME,"")),
