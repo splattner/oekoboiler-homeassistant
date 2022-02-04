@@ -27,7 +27,8 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_WARM,
     CONF_BOUNDRY_INDICATOR_HTG,
     CONF_BOUNDRY_INDICATOR_DEF,
-    CONF_BOUNDRY_INDICATOR_OFF
+    CONF_BOUNDRY_INDICATOR_OFF,
+    UPDATE_LISTENER,
 )
 
 from .oekoboiler import Oekoboiler
@@ -73,11 +74,36 @@ async def async_setup_entry(hass, entry) -> bool:
     
     oekoboiler.setBoundries(boundries)
 
+    update_listener = entry.add_update_listener(async_update_options)
+    hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER] = update_listener
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
+
+async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Update options."""
+
+    _LOGGER.debug("Updated options")
+
+    boundries = {
+        "time": tuple(map(int, entry.data[CONF_BOUNDRY_TIME].split(', '))),
+        "setTemp": tuple(map(int, entry.data[CONF_BOUNDRY_SETTEMP].split(', '))),
+        "waterTemp": tuple(map(int, entry.data[CONF_BOUNDRY_WATERTEMP].split(', '))),
+        "modeAuto": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_AUTO].split(', '))),
+        "modeEcon": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_ECON].split(', '))),
+        "modeHeater": tuple(map(int, entry.data[CONF_BOUNDRY_MODE_HEATER].split(', '))),
+        "indicatorWarm": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_WARM].split(', '))),
+        "indicatorOff": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_OFF].split(', '))),
+        "indicatorHtg": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
+        "indicatorDef": tuple(map(int, entry.data[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
+    }
+
+    oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
+    oekoboiler.setBoundries(boundries)
+
 
 
 class OekoboilerEntity(Entity):

@@ -17,3 +17,5 @@ CONF_BOUNDRY_INDICATOR_OFF: str = "boundry_indicator_off"
 DATA_OEKOBOILER_CLIENT = "oekoboiler_client"
 
 DEFAULT_TIMEOUT = 10
+
+UPDATE_LISTENER = "update_listener"
