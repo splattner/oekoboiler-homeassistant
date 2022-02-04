@@ -2,10 +2,9 @@
 
 from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
 
-from imutils import contours
-import imutils
 import cv2 as cv
 import numpy
+import imutils
 
 
 BLUE_START_THRESHOLD = 40
@@ -98,33 +97,33 @@ class Oekoboiler:
 
 
         # Set Temperature 
-        img_setTemp = self.cropToBoundry(image, BOUNDRY_SETTEMP)
+        img_setTemp = self._cropToBoundry(image, BOUNDRY_SETTEMP)
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
-        cnts, digit, value = self.findDigits(opencv_setTemp, "Set Temp")
+        cnts, digit, value = self._findDigits(opencv_setTemp, "Set Temp")
         self._setTemperature = value
 
 
         # Water Temperature
-        img_waterTemp = self.ropToBoundry(image, BOUNDRY_WATERTEMP)
+        img_waterTemp = self._cropToBoundry(image, BOUNDRY_WATERTEMP)
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
-        cnts, digits,value = self.findDigits(opencv_waterTemp)
+        cnts, digits,value = self._findDigits(opencv_waterTemp)
         self._waterTemperature = value
 
 
         # Modus
-        img_modeAuto = self.cropToBoundry(image, BOUNDRY_MODE_AUTO)
+        img_modeAuto = self._cropToBoundry(image, BOUNDRY_MODE_AUTO)
         opencv_modeAuto = cv.cvtColor(numpy.array(img_modeAuto), cv.COLOR_RGB2BGR)
-        modeAuto = self.isIlluminated(opencv_modeAuto)
+        modeAuto = self._isIlluminated(opencv_modeAuto)
 
 
-        img_modeEcon = self.cropToBoundry(image, BOUNDRY_MODE_ECON)
+        img_modeEcon = self._cropToBoundry(image, BOUNDRY_MODE_ECON)
         opencv_modeEcon = cv.cvtColor(numpy.array(img_modeEcon), cv.COLOR_RGB2BGR)
-        modeEcon = self.isIlluminated(opencv_modeEcon)
+        modeEcon = self._isIlluminated(opencv_modeEcon)
 
 
-        img_modeHeater = self.cropToBoundry(image, BOUNDRY_MODE_HEATER)
+        img_modeHeater = self._cropToBoundry(image, BOUNDRY_MODE_HEATER)
         opencv_modeHeater = cv.cvtColor(numpy.array(img_modeHeater), cv.COLOR_RGB2BGR)
-        modeHeater = self.isIlluminated(opencv_modeHeater)
+        modeHeater = self._isIlluminated(opencv_modeHeater)
 
 
         if modeAuto:
@@ -137,24 +136,24 @@ class Oekoboiler:
             self._mode = "Heater"
 
         # Indicators
-        img_warmIndicator = self.cropToBoundry(image, BOUNDRY_INDICATOR_WARM, removeBlue=True)
+        img_warmIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_WARM, removeBlue=True)
         opencv_warmIndicator= cv.cvtColor(numpy.array(img_warmIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["warm"] = self.isIlluminated(opencv_warmIndicator, "warm")
+        self._indicator["warm"] = self._isIlluminated(opencv_warmIndicator, "warm")
 
 
-        img_defIndicator = self.cropToBoundry(image, BOUNDRY_INDICATOR_DEF, removeBlue=True)
+        img_defIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_DEF, removeBlue=True)
         opencv_defIndicator= cv.cvtColor(numpy.array(img_defIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["def"] = self.isIlluminated(opencv_defIndicator, "def")
+        self._indicator["def"] = self._isIlluminated(opencv_defIndicator, "def")
 
 
-        img_htgIndicator = self.cropToBoundry(image, BOUNDRY_INDICATOR_HTG, removeBlue=True)
+        img_htgIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_HTG, removeBlue=True)
         opencv_htgIndicator= cv.cvtColor(numpy.array(img_htgIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["htg"] = self.isIlluminated(opencv_htgIndicator, "htg")
+        self._indicator["htg"] = self._isIlluminated(opencv_htgIndicator, "htg")
 
 
-        img_offIndicator = self.cropToBoundry(image, BOUNDRY_INDICATOR_OFF, removeBlue=True)
+        img_offIndicator = self._cropToBoundry(image, BOUNDRY_INDICATOR_OFF, removeBlue=True)
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["off"] = self.isIlluminated(opencv_offIndicator, "off")
+        self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
   
 
        
@@ -175,7 +174,7 @@ class Oekoboiler:
 
 
 
-    def isIlluminated(self, image, title=""):
+    def _isIlluminated(self, image, title=""):
 
         h, w = image.shape[:2]
         threshold = h*w*THESHHOLD_ILLUMINATED*0.4
@@ -202,7 +201,7 @@ class Oekoboiler:
         return nonZeroValue > threshold
 
 
-    def findDigits(self, image, title=""):
+    def _findDigits(self, image, title=""):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         #blurred = cv.GaussianBlur(gray, (5, 5), 0)
@@ -320,7 +319,7 @@ class Oekoboiler:
         return digitCnts, digits, value
 
 
-    def cropToBoundry(self, image, boundry, convertToGray=True, removeBlue=False):
+    def _cropToBoundry(self, image, boundry, convertToGray=True, removeBlue=False):
 
         if removeBlue:
             matrix = (

@@ -123,17 +123,18 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
                 self.camera_entity, timeout=self.timeout
             )
 
-            oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage))).convert("RGB")
-
-            w, h = oekoboilerDisplayImage.size
-
-            _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
-
-
 
         except HomeAssistantError as err:
             _LOGGER.error("Error on receive image from entity: %s", err)
             return
+
+
+        oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage))).convert("RGB")
+
+        w, h = oekoboilerDisplayImage.size
+
+        _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
+
 
 
         self._state = "Test Modus"
