@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from os import remove
 from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
 
 from imutils import contours
