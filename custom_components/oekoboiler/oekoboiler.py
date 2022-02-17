@@ -451,6 +451,9 @@ class Oekoboiler:
 
                 new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING, y_pos))
 
+                d = ImageDraw.Draw(new_im)
+                d.rectangle([(w_processedImage + IMAGE_SPACING, y_pos),(w_processedImage + IMAGE_SPACING + img_indicator_w ,y_pos + img_indicator_h)], outline=(0,255,0))
+
                 y_pos = y_pos + img_indicator_h + IMAGE_SPACING 
 
             # Paste Modes
@@ -461,6 +464,9 @@ class Oekoboiler:
 
 
                 new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos))
+
+                d = ImageDraw.Draw(new_im)
+                d.rectangle([(w_processedImage + IMAGE_SPACING + + w_indicator, y_pos),(w_processedImage + IMAGE_SPACING + + w_indicator + img_mode_w ,y_pos + img_mode_h)], outline=(0,255,0))
 
                 y_pos = y_pos + img_mode_h + IMAGE_SPACING 
 
