@@ -81,7 +81,7 @@ async def async_setup_entry(hass, entry) -> bool:
 
     }
 
-    theshhold_illumination = entry.options[CONF_BOUNDRY_INDICATOR_DEF]
+    theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
 
     _LOGGER.debug(boundries)
     
