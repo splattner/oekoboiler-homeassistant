@@ -142,7 +142,7 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
                 default=self.config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, self.config_entry.data.get(CONF_THRESHHOLD_ILLUMINATION,"")),
-            ): cv.int,
+            ): cv.string,
         }
         
 
