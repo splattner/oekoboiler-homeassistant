@@ -216,7 +216,7 @@ class Oekoboiler:
 
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB))
-        w, h = self._image.size
+        w, h = self._image["processed_image"].size
         _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
 
     def _isIlluminated(self, image, title=""):
