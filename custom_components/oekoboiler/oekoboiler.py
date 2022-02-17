@@ -68,6 +68,7 @@ class Oekoboiler:
         self._setTemperature = 0
         self._waterTemperature = 0
         self._mode = ""
+        self._state = ""
 
         self._indicator = {
             "warm": False,
@@ -90,7 +91,8 @@ class Oekoboiler:
 
         }
 
-        self._image = None
+        self._image = dict()
+
 
     def setBoundries(self, boundries):
         _LOGGER.debug("Set new boundries")
@@ -189,6 +191,18 @@ class Oekoboiler:
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
         self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
 
+        if self._indicator["warm"]:
+            self._state = "Warm"
+
+        if self._indicator["def"]:
+            self._state = "Defrosting"
+
+        if self._indicator["htg"]:
+            self._state = "Heating"
+
+        if self._indicator["off"]:
+            self._state = "Off"
+
         self.updatedProcessedImage(original_image)
      
     def updatedProcessedImage(self, original_image):
@@ -205,7 +219,7 @@ class Oekoboiler:
             opencv_image = cv.putText(opencv_image, key, (value[0], value[1]), cv.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1, cv.LINE_AA)
 
         _LOGGER.debug("Saving processed Image")
-        self._image = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB) )
+        self._image["processed_image"] = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB))
         w, h = self._image.size
         _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
 
@@ -223,7 +237,7 @@ class Oekoboiler:
 
         nonZeroValue = cv.countNonZero(thresh)
 
-        #print ("NonZero {}, Threshhold {}".format(nonZeroValue, threshold))
+        _LOGGER.debug("NonZero {}, Threshhold {}".format(nonZeroValue, threshold))
 
         # if DRAW_ILLUMINATION and nonZeroValue > threshold:
         #     h, w = image.shape[:2]
@@ -370,6 +384,10 @@ class Oekoboiler:
         return self._mode
 
     @property
+    def state(self):
+        return self._state
+
+    @property
     def indicator(self):
         return self._indicator
 
@@ -377,16 +395,16 @@ class Oekoboiler:
     def image(self):
         _LOGGER.debug("Request Processes Image")
 
-        return self._image
+        return self._image["processed_image"]
 
     @property
     def imageByteArray(self):
         _LOGGER.debug("Request Processes Image as ByteArray")
 
-        if self._image is not None:
+        if self._image["processed_image"] is not None:
 
             img_byte_arr = io.BytesIO()
-            self._image.save(img_byte_arr, format='JPEG')
+            self._image["processed_image"].save(img_byte_arr, format='JPEG')
         
             return img_byte_arr.getvalue()
 

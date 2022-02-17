@@ -23,6 +23,7 @@ from homeassistant.helpers.typing import ConfigType, HomeAssistantType
 from .const import (
     DOMAIN,
     DATA_OEKOBOILER_CLIENT,
+    CONF_CAMERA_ENTITY_ID,
 )
 
 from. import OekoboilerEntity
@@ -49,6 +50,15 @@ async def async_setup_entry(
                 oekoboiler=oekoboiler,
                 entry=entry,
                 name="Mode",
+            )
+    )
+
+    # State Sensor
+    devices.append(OekoboilerStateSensorEntiry(
+                hass=hass,
+                oekoboiler=oekoboiler,
+                entry=entry,
+                name="State",
             )
     )
 
@@ -87,7 +97,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     ):
 
         self._state: int = None
-        self._camera_entity = "camera.my_camera"
+        self._camera_entity = entry.data[CONF_CAMERA_ENTITY_ID]
 
         super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
 
@@ -144,6 +154,54 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
         self._oekoboiler.processImage(oekoboilerDisplayImage)
         
         self._state = self._oekoboiler.mode
+
+class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
+    def __init__(
+        self,
+        hass: HomeAssistantType,
+        oekoboiler,
+        name,
+        entry,
+        *args,
+        **kwargs,
+    ):
+
+        self._state: int = None
+
+        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
+
+
+    @property
+    def name(self) -> str:
+        return f"State"
+
+    @property
+    def unique_id(self) -> str:
+        return f"oekoboiler_state"
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def state(self) -> int:
+        return self._state
+
+
+
+    @property
+    def device_info(self) -> dict:
+        """Return information about the device."""
+        return {
+            "identifiers": {(DOMAIN, "oekoboiler")},
+            "name": "Oekoboiler",
+            "model": "OekoBoiler",
+            "manufacturer": "Oekoswiss Supply AG",
+        }
+
+    async def async_update(self, **kwargs) -> None:
+
+        self._state = self._oekoboiler.state
 
 class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(

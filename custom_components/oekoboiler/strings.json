@@ -2,16 +2,18 @@
     "config": {
         "step": {
             "user": {
+                "title": "Oekoboiler Configuration",
                 "data": {
                     "camera_entity_id": "Camera Entity ID"
                 }
             }
         }
-    
+
     },
     "options": {
         "step": {
             "init": {
+                "title": "Oekoboiler Configuration Options",
                 "data": {
                     "boundry_time": "Boundry Box for Time Display",
                     "boundry_settemp": "Boundry Box for Set Temperature",
@@ -23,7 +25,6 @@
                     "boundry_indicator_def": "Boundry Box for Def Indicator",
                     "boundry_indicator_htg": "Boundry Box for HTG Indicator",
                     "boundry_indicator_off": "Boundry Box for Off Indicator"
-
                 }
             }
         }
