@@ -41,6 +41,8 @@ DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
 
 THESHHOLD_ILLUMINATED = 0.66
 
+IMAGE_SPACING = 20
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -216,8 +218,6 @@ class Oekoboiler:
 
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB))
-        w, h = self._image["processed_image"].size
-        _LOGGER.debug("Image Size: w={}, h={}".format(w,h))
 
     def _isIlluminated(self, image, title=""):
 
@@ -411,7 +411,7 @@ class Oekoboiler:
 
 
             w_processedImage, h_processedImage = self._image["processed_image"].size
-            IMAGE_SPACING = 20
+            
             
             # Get Max with for indicators
             w_indicator = 0
@@ -425,9 +425,12 @@ class Oekoboiler:
                 if self._getBoundryWidth(self._boundries[indicator]) > w_mode:
                     w_mode = self._getBoundryWidth(self._boundries[indicator])
 
+            # Width and Height of setTemp Images
+            w_setTemp = self._getBoundryWidth(self._boundries["setTemp"])
+            h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
             
             # Width and Height of new Image
-            w = w_processedImage + w_indicator + w_mode + (3 * IMAGE_SPACING)
+            w = w_processedImage + w_indicator + w_mode + w_setTemp + (3 * IMAGE_SPACING)
             h = h_processedImage
 
             new_im = Image.new('RGB', (w,h))
@@ -436,7 +439,7 @@ class Oekoboiler:
             new_im.paste(self._image["processed_image"], (0,0))
 
             # Paste indicators
-            y_pos = 0
+            y_pos = IMAGE_SPACING
             for i, indicator in enumerate(["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]):
                 img_indicator_w = self._getBoundryWidth(self._boundries[indicator])
                 img_indicator_h = self._getBoundryHeight(self._boundries[indicator])
@@ -447,7 +450,7 @@ class Oekoboiler:
                 y_pos = y_pos + img_indicator_h + IMAGE_SPACING 
 
             # Paste Modes
-            y_pos = 0
+            y_pos = IMAGE_SPACING
             for i, indicator in enumerate(["modeAuto","modeEcon","modeHeater"]):
                 img_mode_w = self._getBoundryWidth(self._boundries[indicator])
                 img_mode_h = self._getBoundryHeight(self._boundries[indicator])
@@ -460,11 +463,10 @@ class Oekoboiler:
 
 
             # Paste Temps
-            w_setTemp = self._getBoundryWidth(self._boundries["setTemp"])
-            h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
 
-            new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, 0))
-            new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + IMAGE_SPACING))
+
+            new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
+            new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
 
 
 
