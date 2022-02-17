@@ -127,7 +127,6 @@ class Oekoboiler:
 
 
 
-
         # Water Temperature
         img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
@@ -239,7 +238,7 @@ class Oekoboiler:
             if nonZeroValue > threshold:
                 h, w = image.shape[:2]
                 image = cv.rectangle(image,(0,0),(w,h),(0,255,0),11)
-            self._image[title] = Image.fromarray(cv.cvtColor(image, cv.COLOR_BGR2RGB))
+            self._image[title] = Image.fromarray(cv.cvtColor(thresh, cv.COLOR_BGR2RGB))
 
         return nonZeroValue > threshold
 
@@ -406,10 +405,7 @@ class Oekoboiler:
     def imageByteArray(self):
         _LOGGER.debug("Request Processes Image as ByteArray")
 
-        if self._image["processed_image"] is not None:
-
-
-
+        if "processed_image" in self._image and self._image["processed_image"] is not None:
             w_processedImage, h_processedImage = self._image["processed_image"].size
             
             
@@ -463,16 +459,11 @@ class Oekoboiler:
 
 
             # Paste Temps
-
-
             new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
             new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
 
 
-
-
             img_byte_arr = io.BytesIO()
-            #self._image["processed_image"].save(img_byte_arr, format='JPEG')
             new_im.save(img_byte_arr, format='JPEG')
         
             return img_byte_arr.getvalue()
