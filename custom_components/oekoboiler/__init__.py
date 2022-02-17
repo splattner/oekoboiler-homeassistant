@@ -115,7 +115,7 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
         "indicatorDef": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
     }
 
-    theshhold_illumination = entry.options[CONF_BOUNDRY_INDICATOR_DEF]
+    theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
