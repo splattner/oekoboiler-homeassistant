@@ -100,8 +100,11 @@ class Oekoboiler:
 
         _LOGGER.debug("new Boundries {}".format(self._boundries))
 
-    def setThreshholdIllumination(self, threshhold):
-        self._threshhold_illumination = int(threshhold) / 100
+    def setThreshholdIllumination(self, threshhold: int):
+        _LOGGER.debug("Set new Threshold")
+        self._threshhold_illumination = threshhold / 100
+
+        _LOGGER.debug("new Threshold {}".format(self._threshhold_illumination))
 
 
     def processImage(self, original_image):
