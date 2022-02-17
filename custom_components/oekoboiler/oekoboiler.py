@@ -25,10 +25,6 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DRAW_DIGIT_SEGMENTS = False
-DRAW_DIGIT_CONTURES = False
-DRAW_ILLUMINATION = False
-
 DEFAULT_BOUNDRY_TIME = (230, 170, 455, 270)
 
 DEFAULT_BOUNDRY_SETTEMP = (485, 145, 550, 215)
@@ -120,7 +116,7 @@ class Oekoboiler:
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digit, value = self._findDigits(opencv_setTemp, "Set Temp")
+            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp")
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
@@ -135,7 +131,7 @@ class Oekoboiler:
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digits,value = self._findDigits(opencv_waterTemp)
+            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp")
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
@@ -147,17 +143,17 @@ class Oekoboiler:
         # Modus
         img_modeAuto = self._cropToBoundry(image, self._boundries["modeAuto"])
         opencv_modeAuto = cv.cvtColor(numpy.array(img_modeAuto), cv.COLOR_RGB2BGR)
-        modeAuto = self._isIlluminated(opencv_modeAuto)
+        modeAuto = self._isIlluminated(opencv_modeAuto, "modeAuto")
 
 
         img_modeEcon = self._cropToBoundry(image, self._boundries["modeEcon"])
         opencv_modeEcon = cv.cvtColor(numpy.array(img_modeEcon), cv.COLOR_RGB2BGR)
-        modeEcon = self._isIlluminated(opencv_modeEcon)
+        modeEcon = self._isIlluminated(opencv_modeEcon, "modeEcon")
 
 
         img_modeHeater = self._cropToBoundry(image, self._boundries["modeHeater"])
         opencv_modeHeater = cv.cvtColor(numpy.array(img_modeHeater), cv.COLOR_RGB2BGR)
-        modeHeater = self._isIlluminated(opencv_modeHeater)
+        modeHeater = self._isIlluminated(opencv_modeHeater, "modeHeater")
 
 
         if modeAuto:
@@ -174,22 +170,22 @@ class Oekoboiler:
         # Indicators
         img_warmIndicator = self._cropToBoundry(image, self._boundries["indicatorWarm"], removeBlue=True)
         opencv_warmIndicator= cv.cvtColor(numpy.array(img_warmIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["warm"] = self._isIlluminated(opencv_warmIndicator, "warm")
+        self._indicator["warm"] = self._isIlluminated(opencv_warmIndicator, "indicatorWarm")
 
 
         img_defIndicator = self._cropToBoundry(image, self._boundries["indicatorDef"], removeBlue=True)
         opencv_defIndicator= cv.cvtColor(numpy.array(img_defIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["def"] = self._isIlluminated(opencv_defIndicator, "def")
+        self._indicator["def"] = self._isIlluminated(opencv_defIndicator, "indicatorDef")
 
 
         img_htgIndicator = self._cropToBoundry(image, self._boundries["indicatorHtg"], removeBlue=True)
         opencv_htgIndicator= cv.cvtColor(numpy.array(img_htgIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["htg"] = self._isIlluminated(opencv_htgIndicator, "htg")
+        self._indicator["htg"] = self._isIlluminated(opencv_htgIndicator, "indicatorHtg")
 
 
         img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
         opencv_offIndicator= cv.cvtColor(numpy.array(img_offIndicator), cv.COLOR_RGB2BGR)
-        self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "off")
+        self._indicator["off"] = self._isIlluminated(opencv_offIndicator, "indicatorOff")
 
         if self._indicator["warm"]:
             self._state = "Warm"
@@ -239,9 +235,11 @@ class Oekoboiler:
 
         _LOGGER.debug("NonZero {}, Threshhold {}".format(nonZeroValue, threshold))
 
-        # if DRAW_ILLUMINATION and nonZeroValue > threshold:
-        #     h, w = image.shape[:2]
-        #     im = cv.rectangle(image,(0,0),(w,h),(0,255,0),11)
+        if title is not None:
+            if nonZeroValue > threshold:
+                h, w = image.shape[:2]
+                image = cv.rectangle(image,(0,0),(w,h),(0,255,0),11)
+            self._image[title] = Image.fromarray(cv.cvtColor(image, cv.COLOR_BGR2RGB))
 
         return nonZeroValue > threshold
 
@@ -292,8 +290,8 @@ class Oekoboiler:
                 x = int(x - (w*2.5))
                 w = int(w * 3.5)
 
-            # if (DRAW_DIGIT_CONTURES):
-            #     im = cv.rectangle(im,(x,y),(x+w-1,y+h-1),(0,255,0),1)
+
+            im_seg = cv.rectangle(im_seg,(x,y),(x+w-1,y+h-1),(0,255,0),1)
 
 
             roi = thresh[y:y + h, x:x + w]
@@ -331,12 +329,13 @@ class Oekoboiler:
                 # 50% of the area, mark the segment as "on"
                 if area > 0 and total / float(area) > 0.5:
                     on[i]= 1
-                    # if (DRAW_DIGIT_SEGMENTS):
-                    #     im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,255,255),-1)
-                # else:
-                #     if (DRAW_DIGIT_SEGMENTS):
-                #         im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(0,0,0),-1)
-                
+                    
+                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,255,255),-1)
+                else:
+                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(0,0,0),-1)
+            
+            if title is not None:
+                self._image["{}_segments".format(title)] = Image.fromarray(cv.cvtColor(im_seg, cv.COLOR_BGR2RGB))
 
             # lookup the digit and draw it on the image
             try:
@@ -371,6 +370,12 @@ class Oekoboiler:
 
         return output
 
+    def _getBoundryWidth(self, boundry):
+        return boundry[2] - boundry[0]
+
+    def _getBoundryHeight(self, boundry):
+        return boundry[3] - boundry[1]
+
     @property
     def setTemperature(self):
         return self._setTemperature
@@ -403,8 +408,70 @@ class Oekoboiler:
 
         if self._image["processed_image"] is not None:
 
+
+
+            w_processedImage, h_processedImage = self._image["processed_image"].size
+            IMAGE_SPACING = 20
+            
+            # Get Max with for indicators
+            w_indicator = 0
+            for indicator in ["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]:
+                if self._getBoundryWidth(self._boundries[indicator]) > w_indicator:
+                    w_indicator = self._getBoundryWidth(self._boundries[indicator]) 
+
+            # Get Max with for modes
+            w_mode = 0
+            for indicator in ["modeAuto","modeEcon","modeHeater"]:
+                if self._getBoundryWidth(self._boundries[indicator]) > w_mode:
+                    w_mode = self._getBoundryWidth(self._boundries[indicator])
+
+            
+            # Width and Height of new Image
+            w = w_processedImage + w_indicator + w_mode + (3 * IMAGE_SPACING)
+            h = h_processedImage
+
+            new_im = Image.new('RGB', (w,h))
+
+            # Paste processed Image
+            new_im.paste(self._image["processed_image"], (0,0))
+
+            # Paste indicators
+            y_pos = 0
+            for i, indicator in enumerate(["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]):
+                img_indicator_w = self._getBoundryWidth(self._boundries[indicator])
+                img_indicator_h = self._getBoundryHeight(self._boundries[indicator])
+
+
+                new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING, y_pos))
+
+                y_pos = y_pos + img_indicator_h + IMAGE_SPACING 
+
+            # Paste Modes
+            y_pos = 0
+            for i, indicator in enumerate(["modeAuto","modeEcon","modeHeater"]):
+                img_mode_w = self._getBoundryWidth(self._boundries[indicator])
+                img_mode_h = self._getBoundryHeight(self._boundries[indicator])
+
+
+                new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos))
+
+                y_pos = y_pos + img_mode_h + IMAGE_SPACING 
+
+
+
+            # Paste Temps
+            w_setTemp = self._getBoundryWidth(self._boundries["setTemp"])
+            h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
+
+            new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, 0))
+            new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + IMAGE_SPACING))
+
+
+
+
             img_byte_arr = io.BytesIO()
-            self._image["processed_image"].save(img_byte_arr, format='JPEG')
+            #self._image["processed_image"].save(img_byte_arr, format='JPEG')
+            new_im.save(img_byte_arr, format='JPEG')
         
             return img_byte_arr.getvalue()
 
