@@ -32,6 +32,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_HTG,
     CONF_BOUNDRY_INDICATOR_DEF,
     CONF_BOUNDRY_INDICATOR_OFF,
+    CONF_THRESHHOLD_ILLUMINATION,
     UPDATE_LISTENER,
 )
 
@@ -80,9 +81,12 @@ async def async_setup_entry(hass, entry) -> bool:
 
     }
 
+    theshhold_illumination = entry.options[CONF_BOUNDRY_INDICATOR_DEF]
+
     _LOGGER.debug(boundries)
     
     oekoboiler.setBoundries(boundries)
+    oekoboiler.setThreshholdIllumination(theshhold_illumination)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
@@ -111,8 +115,10 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
         "indicatorDef": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
     }
 
+    theshhold_illumination = entry.options[CONF_BOUNDRY_INDICATOR_DEF]
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
     oekoboiler.setBoundries(boundries)
+    oekoboiler.setThreshholdIllumination(theshhold_illumination)
 
     camera = hass.components.camera
     cameraImage = None

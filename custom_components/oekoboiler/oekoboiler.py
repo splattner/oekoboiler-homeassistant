@@ -39,7 +39,7 @@ DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 155, 225, 185)
 DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 205, 225, 235)
 DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
 
-THESHHOLD_ILLUMINATED = 0.66
+DEFAULT_THESHHOLD_ILLUMINATED = 66
 
 IMAGE_SPACING = 20
 
@@ -89,6 +89,8 @@ class Oekoboiler:
 
         }
 
+        self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
+
         self._image = dict()
 
 
@@ -97,6 +99,9 @@ class Oekoboiler:
         self._boundries = boundries
 
         _LOGGER.debug("new Boundries {}".format(self._boundries))
+
+    def setThreshholdIllumination(self, threshhold):
+        self._threshhold_illumination = threshhold / 100
 
 
     def processImage(self, original_image):
@@ -221,7 +226,7 @@ class Oekoboiler:
     def _isIlluminated(self, image, title=""):
 
         h, w = image.shape[:2]
-        threshold = h*w*THESHHOLD_ILLUMINATED*0.4
+        threshold = h*w*self._threshhold_illumination*0.4
 
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 

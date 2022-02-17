@@ -21,7 +21,8 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_WARM,
     CONF_BOUNDRY_INDICATOR_HTG,
     CONF_BOUNDRY_INDICATOR_DEF,
-    CONF_BOUNDRY_INDICATOR_OFF
+    CONF_BOUNDRY_INDICATOR_OFF,
+    CONF_THRESHHOLD_ILLUMINATION
 )
 
 
@@ -45,6 +46,8 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_BOUNDRY_INDICATOR_HTG: "170, 155, 225, 185",
             CONF_BOUNDRY_INDICATOR_DEF: "170, 205, 225, 235",
             CONF_BOUNDRY_INDICATOR_OFF: "170, 115, 225, 145",
+
+            CONF_THRESHHOLD_ILLUMINATION: 66
 
         }
         super().__init__(*args, **kwargs)
@@ -136,6 +139,10 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
                 CONF_BOUNDRY_INDICATOR_OFF,
                 default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, self.config_entry.data.get(CONF_BOUNDRY_INDICATOR_OFF,"")),
             ): cv.string,
+            vol.Required(
+                CONF_THRESHHOLD_ILLUMINATION,
+                default=self.config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, self.config_entry.data.get(CONF_THRESHHOLD_ILLUMINATION,"")),
+            ): cv.int,
         }
         
 
