@@ -124,7 +124,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            #"identifiers": {(DOMAIN, self.unique_id)},
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
