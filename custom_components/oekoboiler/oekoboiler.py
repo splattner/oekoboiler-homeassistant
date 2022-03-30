@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
 
 import cv2 as cv
@@ -8,6 +9,8 @@ from imutils import contours
 import imutils
 import logging
 import io
+import os
+import requests
 
 
 BLUE_START_THRESHOLD = 40
@@ -25,19 +28,19 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DEFAULT_BOUNDRY_TIME = (230, 170, 455, 270)
+DEFAULT_BOUNDRY_TIME = (260, 160, 455, 250)
 
-DEFAULT_BOUNDRY_SETTEMP = (485, 145, 550, 215)
-DEFAULT_BOUNDRY_WATERTEMP = (485, 265, 555, 328)
+DEFAULT_BOUNDRY_SETTEMP = (485, 135, 550, 205)
+DEFAULT_BOUNDRY_WATERTEMP = (485, 255, 555, 318)
 
-DEFAULT_BOUNDRY_MODE_ECON = (20, 140, 155, 170)
-DEFAULT_BOUNDRY_MODE_AUTO = (20, 210, 155, 240)
-DEFAULT_BOUNDRY_MODE_HEATER = (20, 280, 155, 310)
+DEFAULT_BOUNDRY_MODE_ECON = (15, 120, 150, 145)
+DEFAULT_BOUNDRY_MODE_AUTO = (15, 190, 150, 215)
+DEFAULT_BOUNDRY_MODE_HEATER = (15, 260, 150, 285)
 
-DEFAULT_BOUNDRY_INDICATOR_WARM = (170, 250, 225, 275)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 155, 225, 185)
-DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 205, 225, 235)
-DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 115, 225, 145)
+DEFAULT_BOUNDRY_INDICATOR_WARM = (170, 235, 225, 260)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 140, 225, 170)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 190, 225, 220)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 100, 225, 130)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 
@@ -234,7 +237,7 @@ class Oekoboiler:
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         # theshhold and morphological for cleanup
-        thresh = cv.threshold(gray, 128, 255, cv.THRESH_BINARY)[1]
+        thresh = cv.threshold(gray, 70, 255, cv.THRESH_BINARY)[1]
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (1, 7))
         thresh = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
 
@@ -458,15 +461,15 @@ class Oekoboiler:
 
             # Paste Modes
             y_pos = IMAGE_SPACING
-            for i, indicator in enumerate(["modeAuto","modeEcon","modeHeater"]):
-                img_mode_w = self._getBoundryWidth(self._boundries[indicator])
-                img_mode_h = self._getBoundryHeight(self._boundries[indicator])
+            for i, mode in enumerate(["modeAuto","modeEcon","modeHeater"]):
+                img_mode_w = self._getBoundryWidth(self._boundries[mode])
+                img_mode_h = self._getBoundryHeight(self._boundries[mode])
 
 
-                new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos))
+                new_im.paste(self._image[mode], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos))
 
                 d = ImageDraw.Draw(new_im)
-                d.rectangle([(w_processedImage + IMAGE_SPACING + + w_indicator, y_pos),(w_processedImage + IMAGE_SPACING + + w_indicator + img_mode_w ,y_pos + img_mode_h)], outline=(0,255,0))
+                d.rectangle([(w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos),(w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + img_mode_w ,y_pos + img_mode_h)], outline=(0,255,0))
 
                 y_pos = y_pos + img_mode_h + IMAGE_SPACING 
 
@@ -489,4 +492,50 @@ class Oekoboiler:
 if __name__ == "__main__":
 
     oekoboiler = Oekoboiler()
-    oekoboiler.processImage(Image.open('boiler3.jpg'))
+
+    homeassistanturl = os.getenv("HASS_URL","http://homeassistant.local:8123")
+    bearer_token = os.getenv("HASS_TOKEN", "")
+
+    headers = {
+        "Authorization": "Bearer {}".format(bearer_token),
+    }
+
+    camera_entity = os.getenv("CAMERA_ENTITY", "camera.my_camera")
+
+    url = "{}/api/camera_proxy_stream/{}".format(homeassistanturl, camera_entity)
+    r = requests.request("GET", url, headers=headers, stream=True)
+
+    image = None
+
+    if(r.status_code == 200):
+        bytes=b''
+
+        for chunk in r.iter_content(chunk_size=1024):
+            bytes += chunk
+            finda = bytes.find(b'\xff\xd8')
+            findb = bytes.find(b'\xff\xd9')
+
+            if finda != -1 and findb != -1:
+                jpg = bytes[finda:findb+2]
+                bytes = bytes[findb+2:]
+
+                image = Image.open(io.BytesIO(jpg))
+                
+                if image is not None:
+                    oekoboiler.processImage(image)
+
+                    print("Mode {}".format(oekoboiler.mode))
+                    print("State {}".format(oekoboiler.state))
+                    print("Water Temp {}".format(oekoboiler.waterTemperature))
+                    print("Set Temp {}".format(oekoboiler.setTemperature))
+
+                    # processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
+
+                    # processedImage.show()
+
+
+                    break
+
+
+
+    # 
