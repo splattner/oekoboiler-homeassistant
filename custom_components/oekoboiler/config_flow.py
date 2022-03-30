@@ -8,7 +8,20 @@ import homeassistant.helpers.config_validation as cv
 
 from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
 
-from .oekoboiler import Oekoboiler
+from .oekoboiler import (
+    DEFAULT_BOUNDRY_INDICATOR_HTG,
+    DEFAULT_BOUNDRY_TIME,
+    DEFAULT_BOUNDRY_SETTEMP,
+    DEFAULT_BOUNDRY_WATERTEMP,
+    DEFAULT_BOUNDRY_INDICATOR_DEF,
+    DEFAULT_BOUNDRY_INDICATOR_HTG,
+    DEFAULT_BOUNDRY_INDICATOR_OFF,
+    DEFAULT_BOUNDRY_INDICATOR_WARM,
+    DEFAULT_BOUNDRY_MODE_AUTO,
+    DEFAULT_BOUNDRY_MODE_ECON,
+    DEFAULT_BOUNDRY_MODE_HEATER,
+    DEFAULT_THESHHOLD_ILLUMINATED
+)
 
 
 from .const import (
@@ -35,22 +48,23 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
         self.device_config = {
             CONF_CAMERA_ENTITY_ID: "",
 
+
             # Get Defaults from oekoboiler as initial values
-            CONF_BOUNDRY_TIME: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_TIME),
+            CONF_BOUNDRY_TIME: ", ".join(DEFAULT_BOUNDRY_TIME),
 
-            CONF_BOUNDRY_SETTEMP: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_SETTEMP),
-            CONF_BOUNDRY_WATERTEMP: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_WATERTEMP),
+            CONF_BOUNDRY_SETTEMP: ", ".join(DEFAULT_BOUNDRY_SETTEMP),
+            CONF_BOUNDRY_WATERTEMP: ", ".join(DEFAULT_BOUNDRY_WATERTEMP),
 
-            CONF_BOUNDRY_MODE_ECON: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_MODE_ECON),
-            CONF_BOUNDRY_MODE_AUTO: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_MODE_AUTO),
-            CONF_BOUNDRY_MODE_HEATER: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_MODE_HEATER),
+            CONF_BOUNDRY_MODE_ECON: ", ".join(DEFAULT_BOUNDRY_MODE_ECON),
+            CONF_BOUNDRY_MODE_AUTO: ", ".join(DEFAULT_BOUNDRY_MODE_AUTO),
+            CONF_BOUNDRY_MODE_HEATER: ", ".join(DEFAULT_BOUNDRY_MODE_HEATER),
 
-            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_INDICATOR_WARM),
-            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_INDICATOR_HTG),
-            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_INDICATOR_DEF),
-            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(Oekoboiler.DEFAULT_BOUNDRY_INDICATOR_OFF),
+            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(DEFAULT_BOUNDRY_INDICATOR_WARM),
+            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(DEFAULT_BOUNDRY_INDICATOR_HTG),
+            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(DEFAULT_BOUNDRY_INDICATOR_DEF),
+            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(DEFAULT_BOUNDRY_INDICATOR_OFF),
 
-            CONF_THRESHHOLD_ILLUMINATION: Oekoboiler.DEFAULT_THESHHOLD_ILLUMINATED
+            CONF_THRESHHOLD_ILLUMINATION: DEFAULT_THESHHOLD_ILLUMINATED
 
         }
         super().__init__(*args, **kwargs)
