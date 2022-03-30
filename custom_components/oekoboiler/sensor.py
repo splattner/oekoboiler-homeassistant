@@ -222,7 +222,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        return f"Water Temperature"
+        return f"Oekoboiler Water Temperature"
 
     @property
     def unique_id(self) -> str:
@@ -281,7 +281,7 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        return f"Set Temperature"
+        return f"Oekoboiler Set Temperature"
 
     @property
     def unique_id(self) -> str:
