@@ -35,7 +35,21 @@ from .const import (
     UPDATE_LISTENER,
 )
 
-from .oekoboiler import Oekoboiler
+from .oekoboiler import (
+    Oekoboiler,
+    DEFAULT_BOUNDRY_INDICATOR_HTG,
+    DEFAULT_BOUNDRY_TIME,
+    DEFAULT_BOUNDRY_SETTEMP,
+    DEFAULT_BOUNDRY_WATERTEMP,
+    DEFAULT_BOUNDRY_INDICATOR_DEF,
+    DEFAULT_BOUNDRY_INDICATOR_HTG,
+    DEFAULT_BOUNDRY_INDICATOR_OFF,
+    DEFAULT_BOUNDRY_INDICATOR_WARM,
+    DEFAULT_BOUNDRY_MODE_AUTO,
+    DEFAULT_BOUNDRY_MODE_ECON,
+    DEFAULT_BOUNDRY_MODE_HEATER,
+    DEFAULT_THESHHOLD_ILLUMINATED
+)
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -66,23 +80,22 @@ async def async_setup_entry(hass, entry) -> bool:
 
     _LOGGER.debug("Load boundies from options")
 
+
     boundries = {
-            "time": tuple(map(int, entry.options[CONF_BOUNDRY_TIME].split(', '))),
-            "setTemp": tuple(map(int, entry.options[CONF_BOUNDRY_SETTEMP].split(', '))),
-            "waterTemp": tuple(map(int, entry.options[CONF_BOUNDRY_WATERTEMP].split(', '))),
-            "modeAuto": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_AUTO].split(', '))),
-            "modeEcon": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_ECON].split(', '))),
-            "modeHeater": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_HEATER].split(', '))),
-            "indicatorWarm": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_WARM].split(', '))),
-            "indicatorOff": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_OFF].split(', '))),
-            "indicatorHtg": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
-            "indicatorDef": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
+            "time": tuple(map(int, entry.options.get(CONF_BOUNDRY_TIME,", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)).split(', '))),
+            "setTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_SETTEMP,", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)).split(', '))),
+            "waterTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)).split(', '))),
+            "modeAuto": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)).split(', '))),
+            "modeEcon": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)).split(', '))),
+            "modeHeater": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)).split(', '))),
+            "indicatorWarm": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)).split(', '))),
+            "indicatorOff": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)).split(', '))),
+            "indicatorHtg": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)).split(', '))),
+            "indicatorDef": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)).split(', '))),
 
     }
+    theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
 
-    theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
-
-    _LOGGER.debug(boundries)
     
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))

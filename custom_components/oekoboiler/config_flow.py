@@ -48,7 +48,6 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
         self.device_config = {
             CONF_CAMERA_ENTITY_ID: "",
 
-
             # Get Defaults from oekoboiler as initial values
             CONF_BOUNDRY_TIME: ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME),
 
