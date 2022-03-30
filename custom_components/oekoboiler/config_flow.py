@@ -50,21 +50,21 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
             # Get Defaults from oekoboiler as initial values
-            CONF_BOUNDRY_TIME: ", ".join(DEFAULT_BOUNDRY_TIME),
+            CONF_BOUNDRY_TIME: ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME),
 
-            CONF_BOUNDRY_SETTEMP: ", ".join(DEFAULT_BOUNDRY_SETTEMP),
-            CONF_BOUNDRY_WATERTEMP: ", ".join(DEFAULT_BOUNDRY_WATERTEMP),
+            CONF_BOUNDRY_SETTEMP: ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP),
+            CONF_BOUNDRY_WATERTEMP: ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP),
 
-            CONF_BOUNDRY_MODE_ECON: ", ".join(DEFAULT_BOUNDRY_MODE_ECON),
-            CONF_BOUNDRY_MODE_AUTO: ", ".join(DEFAULT_BOUNDRY_MODE_AUTO),
-            CONF_BOUNDRY_MODE_HEATER: ", ".join(DEFAULT_BOUNDRY_MODE_HEATER),
+            CONF_BOUNDRY_MODE_ECON: ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON),
+            CONF_BOUNDRY_MODE_AUTO: ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO),
+            CONF_BOUNDRY_MODE_HEATER: ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER),
 
-            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(DEFAULT_BOUNDRY_INDICATOR_WARM),
-            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(DEFAULT_BOUNDRY_INDICATOR_HTG),
-            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(DEFAULT_BOUNDRY_INDICATOR_DEF),
-            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(DEFAULT_BOUNDRY_INDICATOR_OFF),
+            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM),
+            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG),
+            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF),
+            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF),
 
-            CONF_THRESHHOLD_ILLUMINATION: DEFAULT_THESHHOLD_ILLUMINATED
+            CONF_THRESHHOLD_ILLUMINATION: str(DEFAULT_THESHHOLD_ILLUMINATED)
 
         }
         super().__init__(*args, **kwargs)
