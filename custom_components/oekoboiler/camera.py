@@ -77,11 +77,11 @@ class OekoboilerProcessedImageCamera(OekoboilerCamera):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, "oekoboiler")},
+            "identifiers": {(DOMAIN, self.unique_id)},
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.id
+            "config_entry_id": self._entry.entry_id
         }
 
     async def async_camera_image(
