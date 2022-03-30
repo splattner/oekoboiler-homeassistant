@@ -94,7 +94,7 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
         data_schema = {
             vol.Required(CONF_CAMERA_ENTITY_ID, 
                          default=self.device_config[CONF_CAMERA_ENTITY_ID]
-                         ): cv.entity_id,
+                         ): cv.string,
         }
 
         #vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)
