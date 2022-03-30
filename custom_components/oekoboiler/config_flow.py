@@ -93,8 +93,12 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         data_schema = {
-            vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
+            vol.Required(CONF_CAMERA_ENTITY_ID, 
+                         default=self.device_config[CONF_CAMERA_ENTITY_ID]
+                         ): cv.string,
         }
+
+        #vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)
 
         return self.async_show_form(
             step_id="user",
