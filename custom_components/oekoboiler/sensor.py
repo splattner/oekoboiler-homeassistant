@@ -124,10 +124,11 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, "oekoboiler")},
+            "identifiers": {(DOMAIN, self.unique_id)},
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
+            "config_entry_id": self._entry.id
         }
 
     async def async_update(self, **kwargs) -> None:

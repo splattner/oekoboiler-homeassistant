@@ -100,6 +100,7 @@ async def async_setup_entry(hass, entry) -> bool:
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
 
+
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
 
     update_listener = entry.add_update_listener(async_update_options)
@@ -108,6 +109,18 @@ async def async_setup_entry(hass, entry) -> bool:
     hass.config_entries.async_setup_platforms(entry, PLATFORMS)
 
     return True
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    _LOGGER.debug("oekoboiler remove entry started")
+
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    
+    if unload_ok:
+            hass.data[DOMAIN].pop(entry.entry_id)
+
+
+    return unload_ok
 
 async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Update options."""
