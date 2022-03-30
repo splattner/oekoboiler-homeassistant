@@ -7,6 +7,9 @@ from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 
 from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
+from oekoboiler.custom_components import oekoboiler
+
+from .oekoboiler import Oekoboiler
 
 
 from .const import (
@@ -33,21 +36,22 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
         self.device_config = {
             CONF_CAMERA_ENTITY_ID: "",
 
-            CONF_BOUNDRY_TIME: "230, 170, 455, 270",
+            # Get Defaults from oekoboiler as initial values
+            CONF_BOUNDRY_TIME: ", ".join(oekoboiler.CONF_BOUNDRY_TIME),
 
-            CONF_BOUNDRY_SETTEMP: "485, 145, 550, 215",
-            CONF_BOUNDRY_WATERTEMP: "485, 265, 555, 328",
+            CONF_BOUNDRY_SETTEMP: ", ".join(oekoboiler.CONF_BOUNDRY_SETTEMP),
+            CONF_BOUNDRY_WATERTEMP: ", ".join(oekoboiler.CONF_BOUNDRY_WATERTEMP),
 
-            CONF_BOUNDRY_MODE_ECON: "20, 140, 155, 170",
-            CONF_BOUNDRY_MODE_AUTO: "20, 210, 155, 240",
-            CONF_BOUNDRY_MODE_HEATER: "20, 280, 155, 310",
+            CONF_BOUNDRY_MODE_ECON: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_ECON),
+            CONF_BOUNDRY_MODE_AUTO: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_AUTO),
+            CONF_BOUNDRY_MODE_HEATER: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_HEATER),
 
-            CONF_BOUNDRY_INDICATOR_WARM: "170, 250, 225, 275",
-            CONF_BOUNDRY_INDICATOR_HTG: "170, 155, 225, 185",
-            CONF_BOUNDRY_INDICATOR_DEF: "170, 205, 225, 235",
-            CONF_BOUNDRY_INDICATOR_OFF: "170, 115, 225, 145",
+            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_WARM),
+            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_HTG),
+            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_DEF),
+            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_OFF),
 
-            CONF_THRESHHOLD_ILLUMINATION: 66
+            CONF_THRESHHOLD_ILLUMINATION: oekoboiler.CONF_THRESHHOLD_ILLUMINATION
 
         }
         super().__init__(*args, **kwargs)
@@ -60,7 +64,6 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # validate input
         if user_input is not None:
-
 
             # build client config
             self.device_config = user_input.copy()
@@ -80,7 +83,10 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_CAMERA_ENTITY_ID, default=self.device_config[CONF_CAMERA_ENTITY_ID]): vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)),
         }
 
-        return self.async_show_form(step_id="user",data_schema=vol.Schema(data_schema), errors=errors)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(data_schema), errors=errors
+        )
     
     @staticmethod
     @callback
