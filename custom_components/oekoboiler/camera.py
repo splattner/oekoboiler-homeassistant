@@ -63,7 +63,7 @@ class OekoboilerProcessedImageCamera(OekoboilerCamera):
 
     @property
     def name(self) -> str:
-        return f"Oekoboiler Display processed image"
+        return f"Oekoboiler processed image"
 
     @property
     def unique_id(self) -> str:
@@ -77,7 +77,7 @@ class OekoboilerProcessedImageCamera(OekoboilerCamera):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-            "identifiers": {(DOMAIN, "oekoboiler")},
+            "identifiers": {(DOMAIN, self.unique_id)},
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
