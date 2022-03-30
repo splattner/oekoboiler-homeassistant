@@ -37,21 +37,21 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
             CONF_CAMERA_ENTITY_ID: "",
 
             # Get Defaults from oekoboiler as initial values
-            CONF_BOUNDRY_TIME: ", ".join(oekoboiler.CONF_BOUNDRY_TIME),
+            CONF_BOUNDRY_TIME: ", ".join(Oekoboiler.CONF_BOUNDRY_TIME),
 
-            CONF_BOUNDRY_SETTEMP: ", ".join(oekoboiler.CONF_BOUNDRY_SETTEMP),
-            CONF_BOUNDRY_WATERTEMP: ", ".join(oekoboiler.CONF_BOUNDRY_WATERTEMP),
+            CONF_BOUNDRY_SETTEMP: ", ".join(Oekoboiler.CONF_BOUNDRY_SETTEMP),
+            CONF_BOUNDRY_WATERTEMP: ", ".join(Oekoboiler.CONF_BOUNDRY_WATERTEMP),
 
-            CONF_BOUNDRY_MODE_ECON: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_ECON),
-            CONF_BOUNDRY_MODE_AUTO: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_AUTO),
-            CONF_BOUNDRY_MODE_HEATER: ", ".join(oekoboiler.CONF_BOUNDRY_MODE_HEATER),
+            CONF_BOUNDRY_MODE_ECON: ", ".join(Oekoboiler.CONF_BOUNDRY_MODE_ECON),
+            CONF_BOUNDRY_MODE_AUTO: ", ".join(Oekoboiler.CONF_BOUNDRY_MODE_AUTO),
+            CONF_BOUNDRY_MODE_HEATER: ", ".join(Oekoboiler.CONF_BOUNDRY_MODE_HEATER),
 
-            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_WARM),
-            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_HTG),
-            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_DEF),
-            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(oekoboiler.CONF_BOUNDRY_INDICATOR_OFF),
+            CONF_BOUNDRY_INDICATOR_WARM: ", ".join(Oekoboiler.CONF_BOUNDRY_INDICATOR_WARM),
+            CONF_BOUNDRY_INDICATOR_HTG: ", ".join(Oekoboiler.CONF_BOUNDRY_INDICATOR_HTG),
+            CONF_BOUNDRY_INDICATOR_DEF: ", ".join(Oekoboiler.CONF_BOUNDRY_INDICATOR_DEF),
+            CONF_BOUNDRY_INDICATOR_OFF: ", ".join(Oekoboiler.CONF_BOUNDRY_INDICATOR_OFF),
 
-            CONF_THRESHHOLD_ILLUMINATION: oekoboiler.CONF_THRESHHOLD_ILLUMINATION
+            CONF_THRESHHOLD_ILLUMINATION: Oekoboiler.CONF_THRESHHOLD_ILLUMINATION
 
         }
         super().__init__(*args, **kwargs)

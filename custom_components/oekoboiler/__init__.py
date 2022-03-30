@@ -1,7 +1,6 @@
 """Provides functionality to interact with an Oekoboiler"""
-import asyncio
 import io
-from datetime import timedelta
+
 import logging
 from typing import final
 

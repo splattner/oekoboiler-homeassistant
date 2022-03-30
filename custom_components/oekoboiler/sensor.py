@@ -2,7 +2,7 @@ import logging
 import io
 from typing import Callable, Union
 
-from PIL import Image, ImageDraw, UnidentifiedImageError
+from PIL import Image
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
