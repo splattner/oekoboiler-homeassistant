@@ -7,7 +7,6 @@ from homeassistant.data_entry_flow import FlowResult
 import homeassistant.helpers.config_validation as cv
 
 from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
-from oekoboiler.custom_components import oekoboiler
 
 from .oekoboiler import Oekoboiler
 
