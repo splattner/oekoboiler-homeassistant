@@ -73,24 +73,23 @@ class Oekoboiler:
         self._time = ""
 
         self._indicator = {
-            "warm": False,
-            "def": False,
             "off": False,
-            "htg": False
+            "htg": False,
+            "def": False,
+            "warm": False,
         }
 
         self._boundries = {
             "time": DEFAULT_BOUNDRY_TIME,
             "setTemp": DEFAULT_BOUNDRY_SETTEMP,
             "waterTemp": DEFAULT_BOUNDRY_WATERTEMP,
-            "modeAuto": DEFAULT_BOUNDRY_MODE_AUTO,
             "modeEcon": DEFAULT_BOUNDRY_MODE_ECON,
+            "modeAuto": DEFAULT_BOUNDRY_MODE_AUTO,
             "modeHeater": DEFAULT_BOUNDRY_MODE_HEATER,
-            "indicatorWarm": DEFAULT_BOUNDRY_INDICATOR_WARM,
             "indicatorOff": DEFAULT_BOUNDRY_INDICATOR_OFF,
             "indicatorHtg": DEFAULT_BOUNDRY_INDICATOR_HTG,
             "indicatorDef": DEFAULT_BOUNDRY_INDICATOR_DEF,
-
+            "indicatorWarm": DEFAULT_BOUNDRY_INDICATOR_WARM,
         }
 
         self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
@@ -319,18 +318,18 @@ class Oekoboiler:
             # we are going to examine
             (roiH, roiW) = roi.shape
             (dW, dH) = (int(roiW  *0.24 * segment_resize_factor ), int(roiH *0.14 * segment_resize_factor))
-            dHC = int(roiH * 0.06 * segment_resize_factor)
+            dHC = int(roiH * 0.12 * segment_resize_factor)
         
 
             # define the set of 7 segments
             segments = [
-                ((0, 0), (w, dH)),	# top
-                ((0, 0), (dW, h // 2)),	# top-left
-                ((w - dW, 0), (w, h // 2)),	# top-right
-                ((0, (h // 2) - dHC) , (w, (h // 2) + dHC)), # center
-                ((0, h // 2), (dW, h)),	# bottom-left
-                ((w - dW, h // 2), (w, h)),	# bottom-right
-                ((0, h - dH), (w, h))	# bottom
+                ((0 + dW // 2, 0), (w - dW // 2, dH)),	# top
+                ((0, 0 + dH // 2), (dW, h // 2 - dHC // 2)),	# top-left
+                ((w - dW, 0 + dH // 2), (w, h // 2 - dHC // 2)),	# top-right
+                ((0 + dW // 2, (h // 2) - dHC // 2) , (w - dW // 2, (h // 2) + dHC // 2)), # center
+                ((0, h // 2 + dHC // 2), (dW, h - dH // 2)),	# bottom-left
+                ((w - dW, h // 2), (w, h - dH // 2)),	# bottom-right
+                ((0 + dW // 2, h - dH), (w - dW // 2, h))	# bottom
             ]
             on = [0] * len(segments)
 
@@ -438,13 +437,13 @@ class Oekoboiler:
             
             # Get Max with for indicators
             w_indicator = 0
-            for indicator in ["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]:
+            for indicator in ["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]:
                 if self._getBoundryWidth(self._boundries[indicator]) > w_indicator:
                     w_indicator = self._getBoundryWidth(self._boundries[indicator]) 
 
             # Get Max with for modes
             w_mode = 0
-            for indicator in ["modeAuto","modeEcon","modeHeater"]:
+            for indicator in ["modeEcon","modeAuto","modeHeater"]:
                 if self._getBoundryWidth(self._boundries[indicator]) > w_mode:
                     w_mode = self._getBoundryWidth(self._boundries[indicator])
 
@@ -464,7 +463,7 @@ class Oekoboiler:
             # Paste indicators
             y_pos = IMAGE_SPACING
             y_pos_max_indicator = 0
-            for i, indicator in enumerate(["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]):
+            for i, indicator in enumerate(["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]):
                 img_indicator_w = self._getBoundryWidth(self._boundries[indicator])
                 img_indicator_h = self._getBoundryHeight(self._boundries[indicator])
 
@@ -479,7 +478,7 @@ class Oekoboiler:
 
             # Paste Modes
             y_pos = IMAGE_SPACING
-            for i, mode in enumerate(["modeAuto","modeEcon","modeHeater"]):
+            for i, mode in enumerate(["modeEcon","modeAuto","modeHeater"]):
                 img_mode_w = self._getBoundryWidth(self._boundries[mode])
                 img_mode_h = self._getBoundryHeight(self._boundries[mode])
 
@@ -563,9 +562,9 @@ if __name__ == "__main__":
                     print("Water Temp {}".format(oekoboiler.waterTemperature))
                     print("Set Temp {}".format(oekoboiler.setTemperature))
 
-                    #processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
+                    processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
 
-                    #processedImage.show()
+                    processedImage.show()
 
 
                     break
