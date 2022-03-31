@@ -124,11 +124,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-<<<<<<< HEAD
-            "identifiers": {(DOMAIN, self._entry.unique_id)},
-=======
             "identifiers": {(DOMAIN, self._entry.entry_id)},
->>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -198,11 +194,7 @@ class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-<<<<<<< HEAD
-            "identifiers": {(DOMAIN, self._entry.unique_id)},
-=======
             "identifiers": {(DOMAIN, self._entry.entry_id)},
->>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -262,11 +254,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-<<<<<<< HEAD
-            "identifiers": {(DOMAIN, self._entry.unique_id)},
-=======
             "identifiers": {(DOMAIN, self._entry.entry_id)},
->>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -324,11 +312,7 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
-<<<<<<< HEAD
-            "identifiers": {(DOMAIN, self._entry.unique_id)},
-=======
             "identifiers": {(DOMAIN, self._entry.entry_id)},
->>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
