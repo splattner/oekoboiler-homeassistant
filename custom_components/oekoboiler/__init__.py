@@ -110,8 +110,8 @@ async def async_setup_entry(hass, entry) -> bool:
 
     return True
 
-async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    _LOGGER.debug("oekoboiler remove entry started")
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    _LOGGER.debug("oekoboiler unload entry started")
 
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)

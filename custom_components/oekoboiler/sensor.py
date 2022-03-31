@@ -124,7 +124,11 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
+<<<<<<< HEAD
             "identifiers": {(DOMAIN, self._entry.unique_id)},
+=======
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+>>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -194,7 +198,11 @@ class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
+<<<<<<< HEAD
             "identifiers": {(DOMAIN, self._entry.unique_id)},
+=======
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+>>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -222,7 +230,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        return f"Water Temperature"
+        return f"Oekoboiler Water Temperature"
 
     @property
     def unique_id(self) -> str:
@@ -254,7 +262,11 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
+<<<<<<< HEAD
             "identifiers": {(DOMAIN, self._entry.unique_id)},
+=======
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+>>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
@@ -281,7 +293,7 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     @property
     def name(self) -> str:
-        return f"Set Temperature"
+        return f"Oekoboiler Set Temperature"
 
     @property
     def unique_id(self) -> str:
@@ -312,7 +324,11 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def device_info(self) -> dict:
         """Return information about the device."""
         return {
+<<<<<<< HEAD
             "identifiers": {(DOMAIN, self._entry.unique_id)},
+=======
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+>>>>>>> 4b76ca54c73dbc03036798fdffbbeb639c7f0cec
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
