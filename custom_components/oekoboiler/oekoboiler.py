@@ -135,7 +135,7 @@ class Oekoboiler:
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,7))
+            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,8))
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
@@ -149,7 +149,7 @@ class Oekoboiler:
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,7))
+            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,8))
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
