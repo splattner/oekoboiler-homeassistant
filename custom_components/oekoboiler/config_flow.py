@@ -108,11 +108,11 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
         options = {
             vol.Required(
                 CONF_BOUNDRY_TIME,
-                default=self.config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME),
+                default=self.config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_SETTEMP,
-                default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP),
+                default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_WATERTEMP,
@@ -136,15 +136,15 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HTG,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG),
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_DEF,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF),
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_OFF,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF),
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
             ): cv.string,
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
