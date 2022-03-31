@@ -117,6 +117,7 @@ class Oekoboiler:
         w, h = original_image.size
         image = ImageOps.deform(original_image, Deformer())
 
+
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
         opencv_time = cv.cvtColor(numpy.array(img_time), cv.COLOR_RGB2BGR)
@@ -132,7 +133,7 @@ class Oekoboiler:
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp")
+            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,4))
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
@@ -146,7 +147,7 @@ class Oekoboiler:
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp")
+            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,4))
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
@@ -257,16 +258,18 @@ class Oekoboiler:
         return nonZeroValue > threshold
 
 
-    def _findDigits(self, image, title="", segment_resize_factor=1):
+    def _findDigits(self, image, title="", segment_resize_factor=1, k=(1,7)):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
 
         # theshhold and morphological for cleanup
         thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
-        kernel = cv.getStructuringElement(cv.MORPH_RECT, (1,7))
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, k)
         morph = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
 
-        im_seg = image.copy()
+        im_seg = cv.cvtColor(morph.copy(), cv.COLOR_GRAY2BGR)
+
+        # im_seg = image.copy()
 
 
         # find contours
@@ -317,18 +320,18 @@ class Oekoboiler:
             # compute the width and height of each of the 7 segments
             # we are going to examine
             (roiH, roiW) = roi.shape
-            (dW, dH) = (int(roiW  *0.24 * segment_resize_factor ), int(roiH *0.14 * segment_resize_factor))
-            dHC = int(roiH * 0.12 * segment_resize_factor)
+            (dW, dH) = (int(roiW  *0.24 * segment_resize_factor ), int(roiH *0.16 * segment_resize_factor))
+            dHC = int(roiH * 0.13 * segment_resize_factor)
         
 
             # define the set of 7 segments
             segments = [
                 ((0 + dW // 2, 0), (w - dW // 2, dH)),	# top
-                ((0, 0 + dH // 2), (dW, h // 2 - dHC // 2)),	# top-left
-                ((w - dW, 0 + dH // 2), (w, h // 2 - dHC // 2)),	# top-right
+                ((0, 0 + dH // 2), (dW, h // 2 - dHC // 4)),	# top-left
+                ((w - dW, 0 + dH // 2), (w, h // 2 - dHC // 4)),	# top-right
                 ((0 + dW // 2, (h // 2) - dHC // 2) , (w - dW // 2, (h // 2) + dHC // 2)), # center
-                ((0, h // 2 + dHC // 2), (dW, h - dH // 2)),	# bottom-left
-                ((w - dW, h // 2), (w, h - dH // 2)),	# bottom-right
+                ((0, h // 2 + dHC // 4), (dW, h - dH // 2)),	# bottom-left
+                ((w - dW, h // 2 + dHC // 4), (w, h - dH // 2)),	# bottom-right
                 ((0 + dW // 2, h - dH), (w - dW // 2, h))	# bottom
             ]
             on = [0] * len(segments)
@@ -349,9 +352,9 @@ class Oekoboiler:
                 if area > 0 and total / float(area) > 0.4:
                     on[i]= 1
                     
-                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,255,255),-1)
+                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,0,0),-1)
                 else:
-                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(0,0,0),-1)
+                    im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(70,70,70),-1)
             
             if title is not None:
                 self._image["{}_segments".format(title)] = Image.fromarray(cv.cvtColor(im_seg, cv.COLOR_BGR2RGB))
