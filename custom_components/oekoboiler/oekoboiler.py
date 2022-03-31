@@ -28,10 +28,10 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DEFAULT_BOUNDRY_TIME = (260, 160, 455, 250)
+DEFAULT_BOUNDRY_TIME = (242, 160, 453, 245)
 
-DEFAULT_BOUNDRY_SETTEMP = (485, 135, 550, 205)
-DEFAULT_BOUNDRY_WATERTEMP = (485, 255, 555, 318)
+DEFAULT_BOUNDRY_SETTEMP = (498, 137, 555, 193)
+DEFAULT_BOUNDRY_WATERTEMP = (505, 259, 563, 310)
 
 DEFAULT_BOUNDRY_MODE_ECON = (15, 120, 150, 145)
 DEFAULT_BOUNDRY_MODE_AUTO = (15, 190, 150, 215)
@@ -44,7 +44,7 @@ DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 100, 225, 130)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 
-IMAGE_SPACING = 20
+IMAGE_SPACING = 10
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class Deformer:
                 (0, 0, w, h),
                 # corresponding source quadrilateral
                 # TOP LEFT, BOTTOM LEFT, BOTTOM RIGHT, TOP RIGHT
-                (0, 0, 0, h, w*0.95, h*1, w*1.05, 0)
+                (0, 0, 0, h, w*0.91, h*1, w*1.05, 0)
                 )]
 
 class Oekoboiler:
@@ -70,6 +70,7 @@ class Oekoboiler:
         self._waterTemperature = 0
         self._mode = ""
         self._state = ""
+        self._time = ""
 
         self._indicator = {
             "warm": False,
@@ -117,11 +118,14 @@ class Oekoboiler:
         w, h = original_image.size
         image = ImageOps.deform(original_image, Deformer())
 
-        # Time
-        # img_time = self.cropToBoundry(image, BOUNDRY_TIME)
-        # opencv_time = cv.cvtColor(numpy.array(img_time), cv.COLOR_RGB2BGR)
-        # cnts, digits, value = self.findDigits(opencv_time, "Time")
-        # time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
+        #Time
+        img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
+        opencv_time = cv.cvtColor(numpy.array(img_time), cv.COLOR_RGB2BGR)
+        cnts, digits, value = self._findDigits(opencv_time, "time")
+        if len(digits) == 4:
+            self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
+        else:
+            self._time = "undef"
 
 
         # Set Temperature 
@@ -254,20 +258,20 @@ class Oekoboiler:
         return nonZeroValue > threshold
 
 
-    def _findDigits(self, image, title=""):
+    def _findDigits(self, image, title="", segment_resize_factor=1):
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
 
         # theshhold and morphological for cleanup
-        thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+        thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
         kernel = cv.getStructuringElement(cv.MORPH_RECT, (1,7))
-        thresh = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
+        morph = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
 
         im_seg = image.copy()
 
 
         # find contours
-        cnts = cv.findContours(thresh.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        cnts = cv.findContours(morph.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         cnts = imutils.grab_contours(cnts)
         digitCnts = []
@@ -281,18 +285,23 @@ class Oekoboiler:
         
             # compute the bounding box of the contour
             (x, y, w, h) = cv.boundingRect(c)
+            
+            # Draw rectacle for all candidates
+            # print("Candidat Width {} Height {}".format(w,h))
+            im_seg = cv.rectangle(im_seg,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,255,0),1)
             # if the contour is sufficiently large, it must be a digit
-            #if w >= 15 and (h >= 40 and h <= 90):
-            digitCnts.append(c)
+            if w >= 10 and (h >= 40 and h <= 100):
+                digitCnts.append(c)
 
 
-        
         digitCnts = contours.sort_contours(digitCnts, method="left-to-right")[0]
         digits = []
 
         for c in digitCnts:
             # extract the digit ROI
             (x, y, w, h) = cv.boundingRect(c)
+
+            # print("Width {} Height {}".format(w,h))
 
             if w <= 15:
                 # its most sury a 1 Digit and we need to increase
@@ -301,7 +310,7 @@ class Oekoboiler:
                 w = int(w * 3.5)
 
 
-            im_seg = cv.rectangle(im_seg,(x,y),(x+w-1,y+h-1),(0,255,0),1)
+            im_seg = cv.rectangle(im_seg,(x-1,y-1),(x+w-1+1,y+h-1+1),(0,255,0),1)
 
 
             roi = thresh[y:y + h, x:x + w]
@@ -309,8 +318,8 @@ class Oekoboiler:
             # compute the width and height of each of the 7 segments
             # we are going to examine
             (roiH, roiW) = roi.shape
-            (dW, dH) = (int(roiW  *0.2), int(roiH *0.20))
-            dHC = int(roiH * 0.1)
+            (dW, dH) = (int(roiW  *0.24 * segment_resize_factor ), int(roiH *0.14 * segment_resize_factor))
+            dHC = int(roiH * 0.06 * segment_resize_factor)
         
 
             # define the set of 7 segments
@@ -337,7 +346,8 @@ class Oekoboiler:
                 area = (xB - xA) * (yB - yA)
                 # if the total number of non-zero pixels is greater than
                 # 50% of the area, mark the segment as "on"
-                if area > 0 and total / float(area) > 0.5:
+                #print ("Title {} Segment {} Area {} Total {}".format(title, i, area,total))
+                if area > 0 and total / float(area) > 0.4:
                     on[i]= 1
                     
                     im_seg = cv.rectangle(im_seg,(xA+x,yA+y),(xB+x,yB+y),(255,255,255),-1)
@@ -346,6 +356,8 @@ class Oekoboiler:
             
             if title is not None:
                 self._image["{}_segments".format(title)] = Image.fromarray(cv.cvtColor(im_seg, cv.COLOR_BGR2RGB))
+                self._image["{}_thresh".format(title)] = Image.fromarray(cv.cvtColor(thresh, cv.COLOR_BGR2RGB))
+                self._image["{}_morph".format(title)] = Image.fromarray(cv.cvtColor(morph, cv.COLOR_BGR2RGB))
 
             # lookup the digit and draw it on the image
             try:
@@ -385,6 +397,10 @@ class Oekoboiler:
 
     def _getBoundryHeight(self, boundry):
         return boundry[3] - boundry[1]
+
+    @property
+    def time(self):
+        return self._time
 
     @property
     def setTemperature(self):
@@ -437,7 +453,7 @@ class Oekoboiler:
             h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
             
             # Width and Height of new Image
-            w = w_processedImage + w_indicator + w_mode + w_setTemp + (3 * IMAGE_SPACING)
+            w = w_processedImage + w_indicator + w_mode + 3 * w_setTemp + (5 * IMAGE_SPACING)
             h = h_processedImage
 
             new_im = Image.new('RGB', (w,h))
@@ -447,6 +463,7 @@ class Oekoboiler:
 
             # Paste indicators
             y_pos = IMAGE_SPACING
+            y_pos_max_indicator = 0
             for i, indicator in enumerate(["indicatorWarm","indicatorDef","indicatorHtg","indicatorOff"]):
                 img_indicator_w = self._getBoundryWidth(self._boundries[indicator])
                 img_indicator_h = self._getBoundryHeight(self._boundries[indicator])
@@ -457,7 +474,8 @@ class Oekoboiler:
                 d = ImageDraw.Draw(new_im)
                 d.rectangle([(w_processedImage + IMAGE_SPACING, y_pos),(w_processedImage + IMAGE_SPACING + img_indicator_w ,y_pos + img_indicator_h)], outline=(0,255,0))
 
-                y_pos = y_pos + img_indicator_h + IMAGE_SPACING 
+                y_pos = y_pos + img_indicator_h + IMAGE_SPACING
+                y_pos_max_indicator = y_pos
 
             # Paste Modes
             y_pos = IMAGE_SPACING
@@ -477,7 +495,22 @@ class Oekoboiler:
 
             # Paste Temps
             new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
+            new_im.paste(self._image["setTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
+            new_im.paste(self._image["setTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
+            
+            
+            
             new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+            new_im.paste(self._image["waterTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+            new_im.paste(self._image["waterTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+
+
+            # Paste Time
+            h_time = self._getBoundryHeight(self._boundries["time"])
+            new_im.paste(self._image["time_segments"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator))
+            new_im.paste(self._image["time_thresh"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING))
+            new_im.paste(self._image["time_morph"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING + h_time + IMAGE_SPACING))
+     
 
 
             img_byte_arr = io.BytesIO()
@@ -524,14 +557,15 @@ if __name__ == "__main__":
                 if image is not None:
                     oekoboiler.processImage(image)
 
+                    print("Time {}".format(oekoboiler.time))
                     print("Mode {}".format(oekoboiler.mode))
                     print("State {}".format(oekoboiler.state))
                     print("Water Temp {}".format(oekoboiler.waterTemperature))
                     print("Set Temp {}".format(oekoboiler.setTemperature))
 
-                    # processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
+                    #processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
 
-                    # processedImage.show()
+                    #processedImage.show()
 
 
                     break
