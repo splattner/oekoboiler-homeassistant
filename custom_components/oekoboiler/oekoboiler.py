@@ -121,19 +121,21 @@ class Oekoboiler:
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
         opencv_time = cv.cvtColor(numpy.array(img_time), cv.COLOR_RGB2BGR)
-        cnts, digits, value = self._findDigits(opencv_time, "time")
-        if len(digits) == 4:
-            self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
-        else:
-            self._time = "undef"
 
+        try:
+            cnts, digits, value = self._findDigits(opencv_time, "time")
+            if len(digits) == 4:
+                self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
+        except Exception as error:
+            _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
+            self._time  = None
 
         # Set Temperature 
         img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,4))
+            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,6))
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
@@ -147,7 +149,7 @@ class Oekoboiler:
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,4))
+            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,6))
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
