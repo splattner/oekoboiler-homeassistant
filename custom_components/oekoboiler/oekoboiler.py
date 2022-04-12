@@ -147,7 +147,7 @@ class Oekoboiler:
         opencv_setTemp = cv.cvtColor(numpy.array(img_setTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,6))
+            cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,8))
             _LOGGER.debug("Set Temperature read: {}".format(value))
             self._setTemperature = value
         except Exception as error:
@@ -161,7 +161,7 @@ class Oekoboiler:
         opencv_waterTemp = cv.cvtColor(numpy.array(img_waterTemp), cv.COLOR_RGB2BGR)
 
         try:
-            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,6))
+            cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,8))
             _LOGGER.debug("Water Temperature read: {}".format(value))
             self._waterTemperature = value
         except Exception as error:
@@ -417,10 +417,10 @@ class Oekoboiler:
             (x, y, w, h) = cv.boundingRect(c)
             
             # Draw rectacle for all candidates
-            # print("Candidat Width {} Height {}".format(w,h))
+            #print("Candidat {} Width {} Height {}".format(title, w,h))
             im_seg = cv.rectangle(im_seg,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,255,0),1)
             # if the contour is sufficiently large, it must be a digit
-            if w >= 10 and (h >= 40 and h <= 100):
+            if w >= 5 and (h >= 40 and h <= 100):
                 digitCnts.append(c)
 
 
