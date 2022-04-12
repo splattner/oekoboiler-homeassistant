@@ -12,6 +12,7 @@ CONF_BOUNDRY_INDICATOR_HTG: str = "boundry_indicator_htg"
 CONF_BOUNDRY_INDICATOR_DEF: str = "boundry_indicator_def"
 CONF_BOUNDRY_INDICATOR_OFF: str = "boundry_indicator_off"
 CONF_THRESHHOLD_ILLUMINATION: int = "threshhold_illumination"
+CONF_AUTODETECT_BOUNDRIES: bool = "autodetect_boundries"
 
 DATA_OEKOBOILER_CLIENT = "oekoboiler_client"
 

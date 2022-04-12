@@ -32,6 +32,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_DEF,
     CONF_BOUNDRY_INDICATOR_OFF,
     CONF_THRESHHOLD_ILLUMINATION,
+    CONF_AUTODETECT_BOUNDRIES,
     UPDATE_LISTENER,
 )
 
@@ -48,7 +49,8 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_MODE_AUTO,
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
-    DEFAULT_THESHHOLD_ILLUMINATED
+    DEFAULT_THESHHOLD_ILLUMINATED,
+    DEFAULT_AUTODETECT_BOUNDRIES
 )
 
 from homeassistant.core import HomeAssistant
@@ -95,10 +97,12 @@ async def async_setup_entry(hass, entry) -> bool:
 
     }
     theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
+    autoDetectBoundries = entry.options.get(CONF_AUTODETECT_BOUNDRIES, bool(DEFAULT_AUTODETECT_BOUNDRIES))
 
     
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
+    oekoboiler.setAutoDetectBoundries(autoDetectBoundries)
 
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}

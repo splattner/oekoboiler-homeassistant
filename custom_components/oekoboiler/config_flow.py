@@ -9,6 +9,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
 
 from .oekoboiler import (
+    DEFAULT_AUTODETECT_BOUNDRIES,
     DEFAULT_BOUNDRY_INDICATOR_HTG,
     DEFAULT_BOUNDRY_TIME,
     DEFAULT_BOUNDRY_SETTEMP,
@@ -20,7 +21,8 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_MODE_AUTO,
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
-    DEFAULT_THESHHOLD_ILLUMINATED
+    DEFAULT_THESHHOLD_ILLUMINATED,
+    DEFAULT_AUTODETECT_BOUNDRIES
 )
 
 
@@ -37,7 +39,8 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_HTG,
     CONF_BOUNDRY_INDICATOR_DEF,
     CONF_BOUNDRY_INDICATOR_OFF,
-    CONF_THRESHHOLD_ILLUMINATION
+    CONF_THRESHHOLD_ILLUMINATION,
+    CONF_AUTODETECT_BOUNDRIES
 )
 
 
@@ -106,6 +109,10 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         options = {
+            vol.Required(
+                CONF_AUTODETECT_BOUNDRIES,
+                default=self.config_entry.options.get(CONF_AUTODETECT_BOUNDRIES, bool(DEFAULT_AUTODETECT_BOUNDRIES)),
+            ): cv.boolean,
             vol.Required(
                 CONF_BOUNDRY_TIME,
                 default=self.config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-
-import re
-from PIL import Image,ImageFilter, ImageEnhance, ImageDraw, ImageOps
+from PIL import Image, ImageDraw, ImageOps
 
 import cv2 as cv
 import numpy
@@ -43,6 +41,7 @@ DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 190, 225, 220)
 DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 100, 225, 130)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
+DEFAULT_AUTODETECT_BOUNDRIES = False
 
 IMAGE_SPACING = 10
 
@@ -93,6 +92,7 @@ class Oekoboiler:
         }
 
         self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
+        self._autoDetectBoundries = False
 
         self._image = dict()
 
@@ -109,13 +109,25 @@ class Oekoboiler:
 
         _LOGGER.debug("new Threshold {}".format(self._threshhold_illumination))
 
+    def setAutoDetectBoundries(self, autoDetectBoundries):
+        _LOGGER.debug("Setting autoDetectBoundries to {}".format(autoDetectBoundries))
+        self._autoDetectBoundries = autoDetectBoundries
+
 
     def processImage(self, original_image):
         _LOGGER.debug("Processing image")
         _LOGGER.debug("Boundries {}".format(self._boundries))
 
+
+
+
         w, h = original_image.size
+
+        # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
+
+        # Some tests for autodetecting boundries
+        self._foundBoundries(cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR), overwriteBoundries=self._autoDetectBoundries)
 
 
         #Time
@@ -221,9 +233,9 @@ class Oekoboiler:
      
     def updatedProcessedImage(self, original_image):
 
-        _LOGGER.debug("Update processed Image")
-        _LOGGER.debug("Boundries {}".format(self._boundries))
+        _LOGGER.debug("Update processed Image due to new boundries {}".format(self._boundries))
 
+        # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
 
         opencv_image = cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR)
@@ -234,6 +246,120 @@ class Oekoboiler:
 
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB))
+
+    def _foundBoundries(self, image, overwriteBoundries = False):
+
+        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+        # theshhold and morphological for cleanup
+        thresh = cv.threshold(gray, 100, 255, cv.THRESH_BINARY | cv.THRESH_OTSU)[1]
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (1,7))
+        morph = cv.morphologyEx(thresh, cv.MORPH_DILATE, kernel)
+
+        im_cnts = cv.cvtColor(thresh.copy(), cv.COLOR_GRAY2BGR)
+
+        # find contours
+        cnts = cv.findContours(morph.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+        cnts = imutils.grab_contours(cnts)
+        cnts = contours.sort_contours(cnts, method="left-to-right")[0]
+
+        setTempBoundry = (0,0,0,0)
+        waterTempBoundry = (0,0,0,0)
+        timeBoundry = (0,0,0,0)
+
+
+        for c in cnts:
+        
+            # compute the bounding box of the contour
+            (x, y, w, h) = cv.boundingRect(c)
+            # Draw rectacle for all candidates
+            #print("Contour x: {}, y: {}, Width {} Height {}".format(x,y,w,h))
+
+
+            unkown = True
+
+            if h > 40 and h < 89 and w > 5 and w < 35:
+                # Might be Temperature Digits
+                #print("-> Temp ")
+                im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,0,0),1)
+
+                if y > setTempBoundry[1] and setTempBoundry[1] == 0 and setTempBoundry[3] == 0:
+                    print("-> first digit settemp ")
+                    # found digit of setTemp Candidat
+                    setTempBoundry = (x,y,x+w,y+w)
+                    unkown = False
+                    continue
+
+
+                if y > waterTempBoundry[1] and waterTempBoundry[1] == 0 and setTempBoundry[1] > 0:
+                    #print("-> first digit watertemp ")
+                    # setTemp Digit already found, so this is watertemp
+                    waterTempBoundry = (x,y,x+w,y+w)
+                    unkown = False
+                    continue
+
+                if setTempBoundry[1] > 0 and waterTempBoundry[1] > 0 and y < waterTempBoundry[1]:
+                    # second digit of setTemp (first digit of set and water temp already known)
+                    # set right boundry to right of second digit
+                    #print("-> second digit settemp ")
+                    setTempBoundry = (setTempBoundry[0],setTempBoundry[1],x+w,setTempBoundry[3])
+
+
+                    if setTempBoundry[1] > y:
+                        # increase boundry height if second digit is heiher
+                        setTempBoundry = (setTempBoundry[0],y,setTempBoundry[2],setTempBoundry[3])
+
+                    if setTempBoundry[3] < y + h:
+                        # increase boundry height if second digit is heiher
+                        setTempBoundry = (setTempBoundry[0],setTempBoundry[1],setTempBoundry[2],y + h)
+                    unkown = False
+                    continue
+
+                if setTempBoundry[1] > 0 and waterTempBoundry[1] > 0 and y > setTempBoundry[3]:
+                    #print("-> second digit watertemp ")
+                    # fourght digit
+                    waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],x+w,waterTempBoundry[3])
+
+                    if waterTempBoundry[1] > y:
+                        # increase boundry height if second digit is heiher
+                        waterTempBoundry = (waterTempBoundry[0],y,waterTempBoundry[2],waterTempBoundry[3])
+
+                    if waterTempBoundry[3] < y + h:
+                            # increase boundry height if second digit is heiher
+                            waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],waterTempBoundry[2],y + h)
+
+                    unkown = False
+                    continue
+
+
+            if h > 90 and w > 150:
+                # Might be Time Digits
+                #print("-> Time ")
+
+                x = x - int(w/4)
+                w = int(w * 1.25)
+
+                im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(0,0,255),1)
+                unkown = False
+                timeBoundry = (x,y,x+w,y+h)
+                
+           
+            if unkown:
+                im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,255,0),1)
+
+        if overwriteBoundries:
+            self._boundries["waterTemp"] = waterTempBoundry
+            self._boundries["setTemp"] = setTempBoundry
+            #self._boundries["time"] = timeBoundry
+
+        im_cnts = cv.rectangle(im_cnts,(setTempBoundry[0]-1,setTempBoundry[1]-1),(setTempBoundry[2]+1,setTempBoundry[3]+1),(0,0,255),1)
+        im_cnts = cv.rectangle(im_cnts,(waterTempBoundry[0]-1,waterTempBoundry[1]-1),(waterTempBoundry[2]+1,waterTempBoundry[3]+1),(0,0,255),1)
+        im_cnts = cv.rectangle(im_cnts,(timeBoundry[0]-1,timeBoundry[1]-1),(timeBoundry[2]+1,timeBoundry[3]+1),(0,0,255),1)
+
+
+        self._image["allContures"] = Image.fromarray(cv.cvtColor(im_cnts, cv.COLOR_BGR2RGB))
+
 
     def _isIlluminated(self, image, title=""):
 
@@ -433,6 +559,14 @@ class Oekoboiler:
         return self._image["processed_image"]
 
     @property
+    def imageConturesByteArray(self):
+
+        img_byte_arr = io.BytesIO()
+        self._image["allContures"].save(img_byte_arr, format='JPEG')
+        
+        return img_byte_arr.getvalue()
+
+    @property
     def imageByteArray(self):
         _LOGGER.debug("Request Processes Image as ByteArray")
 
@@ -568,8 +702,11 @@ if __name__ == "__main__":
                     print("Set Temp {}".format(oekoboiler.setTemperature))
 
                     processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
+                    processedImageContures = Image.open(io.BytesIO(oekoboiler.imageConturesByteArray))
+                    
 
-                    processedImage.show()
+                    #processedImage.show()
+                    processedImageContures.show()
 
 
                     break
