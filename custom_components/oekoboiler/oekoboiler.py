@@ -45,6 +45,9 @@ DEFAULT_AUTODETECT_BOUNDRIES = False
 
 IMAGE_SPACING = 10
 
+TEMPTERATURE_UPPER_VALID = 100
+TEMPTERATURE_LOWER_VALID = 0
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -149,10 +152,11 @@ class Oekoboiler:
         try:
             cnts, digit, value = self._findDigits(opencv_setTemp, "setTemp", k=(1,8))
             _LOGGER.debug("Set Temperature read: {}".format(value))
-            self._setTemperature = value
+            if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
+                self._setTemperature = value
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
-            self._setTemperature = None
+            #self._setTemperature = None
 
 
 
@@ -163,10 +167,11 @@ class Oekoboiler:
         try:
             cnts, digits,value = self._findDigits(opencv_waterTemp, "waterTemp", k=(1,8))
             _LOGGER.debug("Water Temperature read: {}".format(value))
-            self._waterTemperature = value
+            if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
+                self._waterTemperature = value
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Water Temperature value: %s", exc_info=1)
-            self._waterTemperature = None
+            #self._waterTemperature = None
 
 
 
