@@ -290,7 +290,7 @@ class Oekoboiler:
                 im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,0,0),1)
 
                 if y > setTempBoundry[1] and setTempBoundry[1] == 0 and setTempBoundry[3] == 0:
-                    print("-> first digit settemp ")
+                    #print("-> first digit settemp ")
                     # found digit of setTemp Candidat
                     setTempBoundry = (x,y,x+w,y+w)
                     unkown = False
@@ -312,26 +312,26 @@ class Oekoboiler:
 
 
                     if setTempBoundry[1] > y:
-                        # increase boundry height if second digit is heiher
+                        # increase boundry height if second digit is heigher
                         setTempBoundry = (setTempBoundry[0],y,setTempBoundry[2],setTempBoundry[3])
 
                     if setTempBoundry[3] < y + h:
-                        # increase boundry height if second digit is heiher
+                        # increase boundry height if second digit is heigher
                         setTempBoundry = (setTempBoundry[0],setTempBoundry[1],setTempBoundry[2],y + h)
                     unkown = False
                     continue
 
                 if setTempBoundry[1] > 0 and waterTempBoundry[1] > 0 and y > setTempBoundry[3]:
                     #print("-> second digit watertemp ")
-                    # fourght digit
+                    # fourth digit
                     waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],x+w,waterTempBoundry[3])
 
                     if waterTempBoundry[1] > y:
-                        # increase boundry height if second digit is heiher
+                        # increase boundry height if second digit is heigher
                         waterTempBoundry = (waterTempBoundry[0],y,waterTempBoundry[2],waterTempBoundry[3])
 
                     if waterTempBoundry[3] < y + h:
-                            # increase boundry height if second digit is heiher
+                            # increase boundry height if second digit is heigher
                             waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],waterTempBoundry[2],y + h)
 
                     unkown = False
