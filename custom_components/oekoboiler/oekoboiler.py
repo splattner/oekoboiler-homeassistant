@@ -273,13 +273,18 @@ class Oekoboiler:
         waterTempBoundry = (0,0,0,0)
         timeBoundry = (0,0,0,0)
 
+        found_firstSetTemp = False
+        found_secondSetTemp = False
+        found_firstWaterTemp = False
+        found_secondWaterTemp = False
+
 
         for c in cnts:
         
             # compute the bounding box of the contour
             (x, y, w, h) = cv.boundingRect(c)
             # Draw rectacle for all candidates
-            #print("Contour x: {}, y: {}, Width {} Height {}".format(x,y,w,h))
+            print("Contour x: {}, y: {}, Width {} Height {}".format(x,y,w,h))
 
 
             unkown = True
@@ -289,25 +294,27 @@ class Oekoboiler:
                 #print("-> Temp ")
                 im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,0,0),1)
 
-                if y > setTempBoundry[1] and setTempBoundry[1] == 0 and setTempBoundry[3] == 0:
-                    #print("-> first digit settemp ")
+                if not found_firstSetTemp:
+                    print("-> first digit settemp ")
                     # found digit of setTemp Candidat
                     setTempBoundry = (x,y,x+w,y+w)
+                    found_firstSetTemp = True
                     unkown = False
                     continue
 
 
-                if y > waterTempBoundry[1] and waterTempBoundry[1] == 0 and setTempBoundry[1] > 0:
-                    #print("-> first digit watertemp ")
+                if not found_firstWaterTemp and found_firstSetTemp:
+                    print("-> first digit watertemp ")
                     # setTemp Digit already found, so this is watertemp
                     waterTempBoundry = (x,y,x+w,y+w)
+                    found_firstWaterTemp = True
                     unkown = False
                     continue
 
-                if setTempBoundry[1] > 0 and waterTempBoundry[1] > 0 and y < waterTempBoundry[1]:
+                if not found_secondSetTemp and found_firstSetTemp and found_firstWaterTemp:
                     # second digit of setTemp (first digit of set and water temp already known)
                     # set right boundry to right of second digit
-                    #print("-> second digit settemp ")
+                    print("-> second digit settemp ")
                     setTempBoundry = (setTempBoundry[0],setTempBoundry[1],x+w,setTempBoundry[3])
 
 
@@ -318,11 +325,13 @@ class Oekoboiler:
                     if setTempBoundry[3] < y + h:
                         # increase boundry height if second digit is heigher
                         setTempBoundry = (setTempBoundry[0],setTempBoundry[1],setTempBoundry[2],y + h)
+
+                    found_secondSetTemp = True
                     unkown = False
                     continue
 
-                if setTempBoundry[1] > 0 and waterTempBoundry[1] > 0 and y > setTempBoundry[3]:
-                    #print("-> second digit watertemp ")
+                if not found_secondWaterTemp and found_secondSetTemp and found_firstSetTemp and found_firstWaterTemp:
+                    print("-> second digit watertemp ")
                     # fourth digit
                     waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],x+w,waterTempBoundry[3])
 
@@ -333,14 +342,15 @@ class Oekoboiler:
                     if waterTempBoundry[3] < y + h:
                             # increase boundry height if second digit is heigher
                             waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],waterTempBoundry[2],y + h)
-
+                    
+                    found_secondWaterTemp = True
                     unkown = False
                     continue
 
 
             if h > 90 and w > 150:
                 # Might be Time Digits
-                #print("-> Time ")
+                print("-> Time ")
 
                 x = x - int(w/4)
                 w = int(w * 1.25)
