@@ -10,7 +10,7 @@
     "requirements": [
       "opencv-python-headless==4.6.0.66",
       "numpy==1.23.0",
-      "pillow==9.2.0",
+      "pillow==9.1.1",
       "imutils==0.5.4"
     ]
   }
