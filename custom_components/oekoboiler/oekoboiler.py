@@ -26,19 +26,21 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DEFAULT_BOUNDRY_TIME = (242, 160, 453, 245)
+DEFAULT_BOUNDRY_TIME = (270, 165, 555, 280)
 
-DEFAULT_BOUNDRY_SETTEMP = (498, 137, 555, 193)
-DEFAULT_BOUNDRY_WATERTEMP = (505, 259, 563, 310)
+DEFAULT_BOUNDRY_SETTEMP = (605, 130, 690, 210)
+DEFAULT_BOUNDRY_WATERTEMP = (605, 280, 690, 360)
 
-DEFAULT_BOUNDRY_MODE_ECON = (15, 120, 150, 145)
-DEFAULT_BOUNDRY_MODE_AUTO = (15, 190, 150, 215)
-DEFAULT_BOUNDRY_MODE_HEATER = (15, 260, 150, 285)
+DEFAULT_BOUNDRY_MODE_ECON = (15, 140, 160, 170)
+DEFAULT_BOUNDRY_MODE_AUTO = (15, 210, 160, 240)
+DEFAULT_BOUNDRY_MODE_HEATER = (15, 280, 160, 310)
 
-DEFAULT_BOUNDRY_INDICATOR_WARM = (170, 235, 225, 260)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (170, 140, 225, 170)
-DEFAULT_BOUNDRY_INDICATOR_DEF = (170, 190, 225, 220)
-DEFAULT_BOUNDRY_INDICATOR_OFF = (170, 100, 225, 130)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (200, 150, 265, 175)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (200, 185, 265, 210)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (200, 220, 265, 245)
+DEFAULT_BOUNDRY_INDICATOR_WARM = (200, 265, 265, 290)
+
+DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (470, 90, 530, 120)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 DEFAULT_AUTODETECT_BOUNDRIES = False
@@ -48,7 +50,7 @@ IMAGE_SPACING = 10
 TEMPTERATURE_UPPER_VALID = 100
 TEMPTERATURE_LOWER_VALID = 0
 
-
+logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 class Deformer:
@@ -61,7 +63,7 @@ class Deformer:
                 (0, 0, w, h),
                 # corresponding source quadrilateral
                 # TOP LEFT, BOTTOM LEFT, BOTTOM RIGHT, TOP RIGHT
-                (0, 0, 0, h, w*0.91, h*1, w*1.05, 0)
+                (0, 0, 0, h, w*1.0, h*1, w*0.98, 0)
                 )]
 
 class Oekoboiler:
@@ -79,6 +81,7 @@ class Oekoboiler:
             "htg": False,
             "def": False,
             "warm": False,
+            "highTemp": False
         }
 
         self._boundries = {
@@ -92,10 +95,11 @@ class Oekoboiler:
             "indicatorHtg": DEFAULT_BOUNDRY_INDICATOR_HTG,
             "indicatorDef": DEFAULT_BOUNDRY_INDICATOR_DEF,
             "indicatorWarm": DEFAULT_BOUNDRY_INDICATOR_WARM,
+            "indicatorHighTemp": DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP,
         }
 
         self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
-        self._autoDetectBoundries = False
+        self._autoDetectBoundries = DEFAULT_AUTODETECT_BOUNDRIES
 
         self._image = dict()
 
@@ -121,17 +125,13 @@ class Oekoboiler:
         _LOGGER.debug("Processing image")
         _LOGGER.debug("Boundries {}".format(self._boundries))
 
-
-
-
         w, h = original_image.size
 
         # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
 
         # Some tests for autodetecting boundries
-        self._foundBoundries(cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR), overwriteBoundries=self._autoDetectBoundries)
-
+        self._findBoundries(cv.cvtColor(numpy.array(image), cv.COLOR_RGB2BGR), overwriteBoundries=self._autoDetectBoundries)
 
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
@@ -234,6 +234,10 @@ class Oekoboiler:
         if self._indicator["off"]:
             self._state = "Off"
 
+        img_highTempIndicator = self._cropToBoundry(image, self._boundries["indicatorHighTemp"], removeBlue=True)
+        opencv_highTempIndicator= cv.cvtColor(numpy.array(img_highTempIndicator), cv.COLOR_RGB2BGR)
+        self._indicator["highTemp"] = self._isIlluminated(opencv_highTempIndicator, "indicatorHighTemp")
+
         self.updatedProcessedImage(original_image)
      
     def updatedProcessedImage(self, original_image):
@@ -252,7 +256,7 @@ class Oekoboiler:
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = Image.fromarray(cv.cvtColor(opencv_image, cv.COLOR_BGR2RGB))
 
-    def _foundBoundries(self, image, overwriteBoundries = False):
+    def _findBoundries(self, image, overwriteBoundries = False):
 
         gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
@@ -267,7 +271,7 @@ class Oekoboiler:
         cnts = cv.findContours(morph.copy(), cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 
         cnts = imutils.grab_contours(cnts)
-        cnts = contours.sort_contours(cnts, method="left-to-right")[0]
+        cnts = imutils.contours.sort_contours(cnts, method="left-to-right")[0]
 
         setTempBoundry = (0,0,0,0)
         waterTempBoundry = (0,0,0,0)
@@ -284,18 +288,18 @@ class Oekoboiler:
             # compute the bounding box of the contour
             (x, y, w, h) = cv.boundingRect(c)
             # Draw rectacle for all candidates
-            print("Contour x: {}, y: {}, Width {} Height {}".format(x,y,w,h))
+            _LOGGER.debug("Contour x: {}, y: {}, Width {} Height {}".format(x,y,w,h))
 
 
             unkown = True
 
-            if h > 40 and h < 89 and w > 5 and w < 35:
+            if h > 40 and h < 89 and w > 5 and w < 45:
                 # Might be Temperature Digits
                 #print("-> Temp ")
                 im_cnts = cv.rectangle(im_cnts,(x-1,y-1),(x+w-1+1,y+h-1+1),(255,0,0),1)
 
                 if not found_firstSetTemp:
-                    print("-> first digit settemp ")
+                    _LOGGER.debug("-> first digit settemp ")
                     # found digit of setTemp Candidat
                     setTempBoundry = (x,y,x+w,y+w)
                     found_firstSetTemp = True
@@ -304,7 +308,7 @@ class Oekoboiler:
 
 
                 if not found_firstWaterTemp and found_firstSetTemp:
-                    print("-> first digit watertemp ")
+                    _LOGGER.debug("-> first digit watertemp ")
                     # setTemp Digit already found, so this is watertemp
                     waterTempBoundry = (x,y,x+w,y+w)
                     found_firstWaterTemp = True
@@ -314,7 +318,7 @@ class Oekoboiler:
                 if not found_secondSetTemp and found_firstSetTemp and found_firstWaterTemp:
                     # second digit of setTemp (first digit of set and water temp already known)
                     # set right boundry to right of second digit
-                    print("-> second digit settemp ")
+                    _LOGGER.debug("-> second digit settemp ")
                     setTempBoundry = (setTempBoundry[0],setTempBoundry[1],x+w,setTempBoundry[3])
 
 
@@ -331,7 +335,7 @@ class Oekoboiler:
                     continue
 
                 if not found_secondWaterTemp and found_secondSetTemp and found_firstSetTemp and found_firstWaterTemp:
-                    print("-> second digit watertemp ")
+                    _LOGGER.debug("-> second digit watertemp ")
                     # fourth digit
                     waterTempBoundry = (waterTempBoundry[0],waterTempBoundry[1],x+w,waterTempBoundry[3])
 
@@ -350,7 +354,7 @@ class Oekoboiler:
 
             if h > 90 and w > 150:
                 # Might be Time Digits
-                print("-> Time ")
+                _LOGGER.debug("-> Time ")
 
                 x = x - int(w/4)
                 w = int(w * 1.25)
@@ -606,7 +610,8 @@ class Oekoboiler:
             h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
             
             # Width and Height of new Image
-            w = w_processedImage + w_indicator + w_mode + 3 * w_setTemp + (5 * IMAGE_SPACING)
+            # w = w_processedImage + w_indicator + w_mode + 3 * w_setTemp + (5 * IMAGE_SPACING)
+            w = w_processedImage + w_indicator + w_mode + 1 * w_setTemp + (3 * IMAGE_SPACING)
             h = h_processedImage
 
             new_im = Image.new('RGB', (w,h))
@@ -647,22 +652,31 @@ class Oekoboiler:
 
 
             # Paste Temps
-            new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
-            new_im.paste(self._image["setTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
-            new_im.paste(self._image["setTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
+            if "setTemp_segments" in self._image:
+                new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
+            
+            # if "setTemp_thresh" in self._image:
+            #     new_im.paste(self._image["setTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
+            
+            # if "setTemp_morph" in self._image:
+            #     new_im.paste(self._image["setTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, IMAGE_SPACING))
             
             
+            if "waterTemp_segments" in self._image:
+                new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
             
-            new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
-            new_im.paste(self._image["waterTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
-            new_im.paste(self._image["waterTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+            # if "waterTemp_thresh" in self._image:
+            #     new_im.paste(self._image["waterTemp_thresh"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+            
+            # if "waterTemp_morph" in self._image:                
+            #     new_im.paste(self._image["waterTemp_morph"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING + 2 * w_setTemp + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
 
 
             # Paste Time
-            h_time = self._getBoundryHeight(self._boundries["time"])
-            new_im.paste(self._image["time_segments"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator))
-            new_im.paste(self._image["time_thresh"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING))
-            new_im.paste(self._image["time_morph"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING + h_time + IMAGE_SPACING))
+            # h_time = self._getBoundryHeight(self._boundries["time"])
+            # new_im.paste(self._image["time_segments"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator))
+            # new_im.paste(self._image["time_thresh"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING))
+            # new_im.paste(self._image["time_morph"], (w_processedImage + IMAGE_SPACING, y_pos_max_indicator + h_time + IMAGE_SPACING + h_time + IMAGE_SPACING))
      
 
 
@@ -677,6 +691,9 @@ class Oekoboiler:
 
 if __name__ == "__main__":
 
+
+    _LOGGER.setLevel(logging.DEBUG)
+
     oekoboiler = Oekoboiler()
 
     homeassistanturl = os.getenv("HASS_URL","http://homeassistant.local:8123")
@@ -686,7 +703,7 @@ if __name__ == "__main__":
         "Authorization": "Bearer {}".format(bearer_token),
     }
 
-    camera_entity = os.getenv("CAMERA_ENTITY", "camera.my_camera")
+    camera_entity = os.getenv("CAMERA_ENTITY", "camera.oekoboiler_camera")
 
     url = "{}/api/camera_proxy_stream/{}".format(homeassistanturl, camera_entity)
     r = requests.request("GET", url, headers=headers, stream=True)
@@ -710,18 +727,20 @@ if __name__ == "__main__":
                 if image is not None:
                     oekoboiler.processImage(image)
 
-                    print("Time {}".format(oekoboiler.time))
+                    #print("Time {}".format(oekoboiler.time))
                     print("Mode {}".format(oekoboiler.mode))
                     print("State {}".format(oekoboiler.state))
                     print("Water Temp {}".format(oekoboiler.waterTemperature))
                     print("Set Temp {}".format(oekoboiler.setTemperature))
 
+                    print("High Temp {}".format(oekoboiler.indicator["highTemp"]))
+
                     processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
                     processedImageContures = Image.open(io.BytesIO(oekoboiler.imageConturesByteArray))
                     
 
-                    #processedImage.show()
-                    processedImageContures.show()
+                    processedImage.show()
+                    #processedImageContures.show()
 
 
                     break
