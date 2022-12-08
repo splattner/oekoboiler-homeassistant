@@ -24,7 +24,7 @@ DIGITS_LOOKUP = {
 
 DEFAULT_BOUNDRY_TIME = (280, 245, 565, 365)
 
-DEFAULT_BOUNDRY_SETTEMP = (630, 210, 705, 285)
+DEFAULT_BOUNDRY_SETTEMP = (630, 210, 710, 285)
 DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 710, 448)
 
 DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
@@ -238,7 +238,7 @@ class Oekoboiler:
         threshold = h*w*self._threshhold_illumination*0.4
 
         gray = image.convert('L')
-        thresh = gray.point( lambda p: 255 if p > 80 else 0)
+        thresh = gray.point( lambda p: 255 if p > 70 else 0)
         nonZeroValue = sum(thresh.point( bool).getdata())
 
         _LOGGER.debug("{} NonZero {}, Threshhold {}".format(title, nonZeroValue, threshold))
@@ -256,22 +256,58 @@ class Oekoboiler:
 
     def _findDigits(self, image, title="", segment_resize_factor=1, k=(1,7)):
 
+        
+
         gray_image = image.convert('L')
-        thresh_image = gray_image.point( lambda p: 255 if p > 100 else 0)
-        h, w = thresh_image.size
-        _LOGGER.debug("Image Size {}/{} ".format(w,h))
+        thresh_image = gray_image.point( lambda p: 255 if p > 80 else 0)
+        w,h = thresh_image.size
+        _LOGGER.debug("Image Size {} {}/{} ".format(title, w,h))
+
+        # convert the threshhold image back to RGB so we can draw in color on in
+        image = thresh_image.convert('RGB')
+        draw = ImageDraw.Draw(image)
         
-        
+
         # we know that there are 2 digits, left and right side of the image
-        rois = [(0, 0, w/2 - w/16, h), (w/2 + w/10, 0, w, h)]
+        rois = [(0, 0, int(w/2), h), (int(w/2), 0, w, h)]
 
         digits = []
 
+        # go trough all region of interest (digits)
         for roi in rois:
-            print ("Roi {} ".format(roi))
+            #print ("Roi {} ".format(roi))
+            draw.rectangle(roi, outline="yellow", width=1)
 
+            # as migt not begin at the border of the roi
+            # scan roi from the right to left until the digit really begins
+            adapted_roi = roi
+            for i in range(roi[2]-1, roi[0], -1):
+                crop = (i-1,0, i,roi[3]-roi[1]-1)
+                #print ("Scaning roi for right end {}".format(i))
+                # Get one pixel line
+                
+                scan = thresh_image.crop(crop)
+                total = sum(scan.point( bool).getdata())
+                if total > 10:
+                    adapted_roi = (roi[0],roi[1],i,roi[3])
+                    break
+            
+            #scan from left to right
+            # for i in range(roi[0], roi[2]-1):
+            #     crop = (i,0, i+1,roi[3]-roi[1]-1)
+            #     print ("Scaning roi for left end {}".format(i))
+            #     # Get one pixel line
+                
+            #     scan = thresh_image.crop(crop)
+            #     total = sum(scan.point( bool).getdata())
+            #     if total > 10:
+            #         adapted_roi = (i,roi[1],roi[2],roi[3])
+            #         break
+               
+            #print ("Adapted Roi after scan {} ".format(roi))
+            draw.rectangle(adapted_roi, outline="orange", width=1)
             # get only one part of the image
-            im_seg = thresh_image.crop(roi)
+            im_seg = thresh_image.crop(adapted_roi)
 
 
             # compute the width and height of each of the 7 segments
@@ -310,7 +346,7 @@ class Oekoboiler:
                 # if the total number of non-zero pixels is greater than
                 # 40% of the area, mark the segment as "on"
                 _LOGGER.debug("Title {} Segment {} Area {} Total {}".format(title, i, area,total))
-                draw = ImageDraw.Draw(image)
+                
                 draw.text((roi[0]+xA, roi[1]+yA), str(i))
                 
                 if area > 0 and total / float(area) > 0.4:
@@ -525,8 +561,8 @@ if __name__ == "__main__":
 
                     processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
 
-                    processedImage.show()
-                    #processedImage.save("test.png")
+                    #processedImage.show()
+                    processedImage.save("test.png")
 
 
 
