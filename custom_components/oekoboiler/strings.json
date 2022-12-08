@@ -25,7 +25,8 @@
                     "boundry_indicator_warm": "Boundry Box for Warm Indicator",
                     "boundry_indicator_def": "Boundry Box for Def Indicator",
                     "boundry_indicator_htg": "Boundry Box for HTG Indicator",
-                    "boundry_indicator_off": "Boundry Box for Off Indicator"
+                    "boundry_indicator_off": "Boundry Box for Off Indicator",
+                    "boundry_indicator_high_temp": "Boundry Box for Hight Temp Indicator"
                 }
             }
         }

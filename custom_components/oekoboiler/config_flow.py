@@ -17,6 +17,7 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_INDICATOR_HTG,
     DEFAULT_BOUNDRY_INDICATOR_OFF,
     DEFAULT_BOUNDRY_INDICATOR_WARM,
+    DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP,
     DEFAULT_BOUNDRY_MODE_AUTO,
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
@@ -37,6 +38,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_HTG,
     CONF_BOUNDRY_INDICATOR_DEF,
     CONF_BOUNDRY_INDICATOR_OFF,
+    CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
     CONF_THRESHHOLD_ILLUMINATION,
 )
 
@@ -145,6 +147,10 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_OFF,
                 default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
+            ): cv.string,
+            vol.Required(
+                CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
+                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)),
             ): cv.string,
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
