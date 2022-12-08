@@ -97,12 +97,10 @@ async def async_setup_entry(hass, entry) -> bool:
 
     }
     theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
-    autoDetectBoundries = entry.options.get(CONF_AUTODETECT_BOUNDRIES, bool(DEFAULT_AUTODETECT_BOUNDRIES))
 
     
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
-    oekoboiler.setAutoDetectBoundries(autoDetectBoundries)
 
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
