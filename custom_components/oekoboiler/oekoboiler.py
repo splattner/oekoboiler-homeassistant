@@ -31,8 +31,8 @@ DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
 DEFAULT_BOUNDRY_MODE_AUTO = (15, 280, 170, 310)
 DEFAULT_BOUNDRY_MODE_HEATER = (15, 350, 170, 380)
 
-DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 240, 265, 285)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 275, 265, 300)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 275, 265, 300)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 240, 265, 265)
 DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 310, 265, 335)
 DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 355, 265, 380)
 
@@ -350,7 +350,6 @@ class Oekoboiler:
                 draw.text((roi[0]+xA, roi[1]+yA), str(i))
                 
                 if area > 0 and total / float(area) > 0.4:
-                    print ("on".format())
                     on[i]= 1
                     draw.rectangle([(roi[0]+xA,roi[1]+yA),(roi[0]+xB,roi[1]+yB)], outline="red", width=1)
 
