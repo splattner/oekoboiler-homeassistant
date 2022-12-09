@@ -238,7 +238,7 @@ class Oekoboiler:
         threshold = h*w*self._threshhold_illumination*0.4
 
         gray = image.convert('L')
-        thresh = gray.point( lambda p: 255 if p > 70 else 0)
+        thresh = gray.point( lambda p: 255 if p > 50 else 0)
         nonZeroValue = sum(thresh.point( bool).getdata())
 
         _LOGGER.debug("{} NonZero {}, Threshhold {}".format(title, nonZeroValue, threshold))
@@ -255,8 +255,6 @@ class Oekoboiler:
 
 
     def _findDigits(self, image, title="", segment_resize_factor=1, k=(1,7)):
-
-        
 
         gray_image = image.convert('L')
         thresh_image = gray_image.point( lambda p: 255 if p > 80 else 0)
@@ -293,6 +291,7 @@ class Oekoboiler:
                     break
             
             #scan from left to right
+            # disabled as the digit 1 only is on the right side and a scan would mess up the segments
             # for i in range(roi[0], roi[2]-1):
             #     crop = (i,0, i+1,roi[3]-roi[1]-1)
             #     print ("Scaning roi for left end {}".format(i))
@@ -436,73 +435,29 @@ class Oekoboiler:
         _LOGGER.debug("Request Processes Image as ByteArray")
 
         if "processed_image" in self._image and self._image["processed_image"] is not None:
-            w_processedImage, h_processedImage = self._image["processed_image"].size
-            
-            
-            # Get Max with for indicators
-            w_indicator = 0
-            for indicator in ["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]:
-                if self._getBoundryWidth(self._boundries[indicator]) > w_indicator:
-                    w_indicator = self._getBoundryWidth(self._boundries[indicator]) 
-
-            # Get Max with for modes
-            w_mode = 0
-            for indicator in ["modeEcon","modeAuto","modeHeater"]:
-                if self._getBoundryWidth(self._boundries[indicator]) > w_mode:
-                    w_mode = self._getBoundryWidth(self._boundries[indicator])
-
-            # Width and Height of setTemp Images
-            w_setTemp = self._getBoundryWidth(self._boundries["setTemp"])
-            h_setTemp = self._getBoundryHeight(self._boundries["setTemp"])
-            
-            # Width and Height of new Image
-            w = w_processedImage + w_indicator + w_mode + 1 * w_setTemp + (3 * IMAGE_SPACING)
-            h = h_processedImage
-
-            new_im = Image.new('RGB', (w,h))
-
             # Paste processed Image
+            w_processedImage, h_processedImage = self._image["processed_image"].size
+            new_im = Image.new('RGB', (w_processedImage,h_processedImage))
             new_im.paste(self._image["processed_image"], (0,0))
 
             # Paste indicators
-            y_pos = IMAGE_SPACING
-            y_pos_max_indicator = 0
             for i, indicator in enumerate(["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]):
-                img_indicator_w = self._getBoundryWidth(self._boundries[indicator])
-                img_indicator_h = self._getBoundryHeight(self._boundries[indicator])
-
-
-                new_im.paste(self._image[indicator], (w_processedImage + IMAGE_SPACING, y_pos))
-
-                d = ImageDraw.Draw(new_im)
-                d.rectangle([(w_processedImage + IMAGE_SPACING, y_pos),(w_processedImage + IMAGE_SPACING + img_indicator_w ,y_pos + img_indicator_h)], outline=(0,255,0))
-
-                y_pos = y_pos + img_indicator_h + IMAGE_SPACING
-                y_pos_max_indicator = y_pos
+                boundry = self._boundries[indicator]
+                new_im.paste(self._image[indicator], (boundry[0], boundry[1]))
 
             # Paste Modes
-            y_pos = IMAGE_SPACING
             for i, mode in enumerate(["modeEcon","modeAuto","modeHeater"]):
-                img_mode_w = self._getBoundryWidth(self._boundries[mode])
-                img_mode_h = self._getBoundryHeight(self._boundries[mode])
-
-
-                new_im.paste(self._image[mode], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos))
-
-                d = ImageDraw.Draw(new_im)
-                d.rectangle([(w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING , y_pos),(w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + img_mode_w ,y_pos + img_mode_h)], outline=(0,255,0))
-
-                y_pos = y_pos + img_mode_h + IMAGE_SPACING 
-
+                boundry = self._boundries[mode]
+                new_im.paste(self._image[mode], (boundry[0], boundry[1]))
 
 
             # Paste Temps
             if "setTemp_segments" in self._image:
-                new_im.paste(self._image["setTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, IMAGE_SPACING))
-            
-            
+                boundry = self._boundries["setTemp"]
+                new_im.paste(self._image["setTemp_segments"], (boundry[0], boundry[1]))
             if "waterTemp_segments" in self._image:
-                new_im.paste(self._image["waterTemp_segments"], (w_processedImage + IMAGE_SPACING + w_indicator + IMAGE_SPACING + w_mode + IMAGE_SPACING, h_setTemp + (2 *IMAGE_SPACING)))
+                boundry = self._boundries["waterTemp"]
+                new_im.paste(self._image["waterTemp_segments"], (boundry[0], boundry[1]))
             
 
             img_byte_arr = io.BytesIO()
