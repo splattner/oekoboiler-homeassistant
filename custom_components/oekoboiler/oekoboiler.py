@@ -36,7 +36,7 @@ DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 240, 265, 265)
 DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 310, 265, 335)
 DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 355, 265, 380)
 
-DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (470, 190, 530, 220)
+DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 
@@ -316,7 +316,7 @@ class Oekoboiler:
             (roiW, roiH) = im_seg.size
 
             # width and height of a segment
-            (dW, dH) = (int(roiW  *0.25 * segment_resize_factor ), int(roiH *0.19 * segment_resize_factor))
+            (dW, dH) = (int(roiW  *0.25 * segment_resize_factor ), int(roiH *0.15 * segment_resize_factor))
             # height of vertical segment
             dHC = int(roiH * 0.18 * segment_resize_factor)
         
@@ -326,10 +326,12 @@ class Oekoboiler:
                 ((0 + dW // 2, 0), (roiW - dW // 2, dH)),	# top
                 ((0, 0 + dH // 2), (dW, roiH // 2 - dHC // 4)),	# top-left
                 ((roiW - dW, 0 + dH // 2), (roiW, roiH // 2 - dHC // 4)),	# top-right
-                ((0 + dW // 2, (roiH // 2) - dHC // 2) , (roiW - dW // 2, (roiH // 2) + dHC // 2)), # center
+                ((0 + dW, (roiH // 2) - dHC // 2) , (roiW - dW, (roiH // 2) + dHC // 2)), # center
+                #((0 + dW // 2, (roiH // 2) - dHC // 2) , (roiW - dW // 2, (roiH // 2) + dHC // 2)), # center
                 ((0, roiH // 2 + dHC // 4), (dW, roiH - dH // 2)),	# bottom-left
                 ((roiW - dW, roiH // 2 + dHC // 4), (roiW, roiH - dH // 2)),	# bottom-right
-                ((0 + dW // 2, roiH - dH), (roiW - dW // 2, roiH))	# bottom
+                ((0 + dW // 2, roiH - dH), (roiW - dW, roiH))	# bottom
+                #((0 + dW // 2, roiH - dH), (roiW - dW // 2, roiH))	# bottom
             ]
             on = [0] * len(segments)
 
