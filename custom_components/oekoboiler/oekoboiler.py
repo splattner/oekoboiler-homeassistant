@@ -287,26 +287,31 @@ class Oekoboiler:
                 scan = thresh_image.crop(crop)
                 total = sum(scan.point( bool).getdata())
                 if total > 10:
-                    adapted_roi = (roi[0],roi[1],i,roi[3])
+                    #print("{} > 10".format(total))
+                    adapted_roi = (adapted_roi[0],adapted_roi[1],i,adapted_roi[3])
                     break
+
+            #print ("Adapted Roi after scan {} ".format(adapted_roi))
             
             #scan from left to right
-            # disabled as the digit 1 only is on the right side and a scan would mess up the segments
-            # for i in range(roi[0], roi[2]-1):
-            #     crop = (i,0, i+1,roi[3]-roi[1]-1)
-            #     print ("Scaning roi for left end {}".format(i))
-            #     # Get one pixel line
+            for i in range(roi[0], roi[0]+((roi[2]- roi[0]) // 2)):
+                crop = (i,0, i+1,roi[3]-roi[1]-1)
+                #print ("Scaning roi for left end {}".format(i))
+                # Get one pixel line
                 
-            #     scan = thresh_image.crop(crop)
-            #     total = sum(scan.point( bool).getdata())
-            #     if total > 10:
-            #         adapted_roi = (i,roi[1],roi[2],roi[3])
-            #         break
+                scan = thresh_image.crop(crop)
+                total = sum(scan.point( bool).getdata())
+                if total > 10:
+                    #print("{} > 10".format(total))
+                    adapted_roi = (i,adapted_roi[1],adapted_roi[2],adapted_roi[3])
+                    break
                
-            #print ("Adapted Roi after scan {} ".format(roi))
-            draw.rectangle(adapted_roi, outline="orange", width=1)
+            #print ("Adapted Roi after scan {} ".format(adapted_roi))
+            draw.rectangle(adapted_roi, outline="green", width=1)
+
+            roi = adapted_roi
             # get only one part of the image
-            im_seg = thresh_image.crop(adapted_roi)
+            im_seg = thresh_image.crop(roi)
 
 
             # compute the width and height of each of the 7 segments
@@ -317,18 +322,18 @@ class Oekoboiler:
             # width and height of a segment
             (dW, dH) = (int(roiW  *0.25 * segment_resize_factor ), int(roiH *0.15 * segment_resize_factor))
             # height of vertical segment
-            dHC = int(roiH * 0.18 * segment_resize_factor)
+            dHC = int(roiH * 0.13 * segment_resize_factor)
         
 
             # define the set of 7 segments
             segments = [
                 ((0 + dW // 2, 0), (roiW - dW // 2, dH)),	# top
-                ((0, 0 + dH // 2), (dW, roiH // 2 - dHC // 4)),	# top-left
-                ((roiW - dW, 0 + dH // 2), (roiW, roiH // 2 - dHC // 4)),	# top-right
+                ((0, 0 + dH ), (dW, roiH // 2 - dHC // 2)),	# top-left
+                ((roiW - dW, 0 + dH), (roiW, roiH // 2 - dHC // 2)),	# top-right
                 ((0 + dW, (roiH // 2) - dHC // 2) , (roiW - dW, (roiH // 2) + dHC // 2)), # center
                 #((0 + dW // 2, (roiH // 2) - dHC // 2) , (roiW - dW // 2, (roiH // 2) + dHC // 2)), # center
-                ((0, roiH // 2 + dHC // 4), (dW, roiH - dH // 2)),	# bottom-left
-                ((roiW - dW, roiH // 2 + dHC // 4), (roiW, roiH - dH // 2)),	# bottom-right
+                ((0, roiH // 2 + dHC // 2), (dW, roiH - dH )),	# bottom-left
+                ((roiW - dW, roiH // 2 + dHC // 2), (roiW, roiH - dH )),	# bottom-right
                 ((0 + dW // 2, roiH - dH), (roiW - dW, roiH))	# bottom
                 #((0 + dW // 2, roiH - dH), (roiW - dW // 2, roiH))	# bottom
             ]
