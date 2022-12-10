@@ -22,7 +22,7 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DEFAULT_BOUNDRY_TIME = (280, 245, 565, 365)
+DEFAULT_BOUNDRY_TIME = (290, 253, 575, 363)
 
 DEFAULT_BOUNDRY_SETTEMP = (630, 210, 710, 285)
 DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 710, 448)
@@ -31,9 +31,9 @@ DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
 DEFAULT_BOUNDRY_MODE_AUTO = (15, 300, 170, 330)
 DEFAULT_BOUNDRY_MODE_HEATER = (15, 350, 170, 380)
 
-DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 275, 265, 300)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 240, 265, 265)
-DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 310, 265, 335)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 265, 265, 290)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 238, 265, 263)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 295, 265, 320)
 DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 355, 265, 380)
 
 DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
@@ -123,7 +123,7 @@ class Oekoboiler:
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
 
         try:
-            digits, value = self._findDigits(img_time, "time")
+            digits, value = self._findDigits(img_time, "time", numDigits=4, withSeperator=True)
             if len(digits) == 4:
                 self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
         except Exception as error:
@@ -134,7 +134,7 @@ class Oekoboiler:
         img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
 
         try:
-            digit, value = self._findDigits(img_setTemp, "setTemp", k=(1,8))
+            digit, value = self._findDigits(img_setTemp, "setTemp", numDigits=2)
             _LOGGER.debug("Set Temperature read: {}".format(value))
             if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
                 self._setTemperature = value
@@ -148,7 +148,7 @@ class Oekoboiler:
         img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
 
         try:
-            digits,value = self._findDigits(img_waterTemp, "waterTemp", k=(1,8))
+            digits,value = self._findDigits(img_waterTemp, "waterTemp", numDigits=2)
             _LOGGER.debug("Water Temperature read: {}".format(value))
             if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
                 self._waterTemperature = value
@@ -254,7 +254,7 @@ class Oekoboiler:
         return nonZeroValue > threshold
 
 
-    def _findDigits(self, image, title="", segment_resize_factor=1, k=(1,7)):
+    def _findDigits(self, image, title="", segment_resize_factor=1, numDigits = 2, withSeperator=False):
 
         gray_image = image.convert('L')
         thresh_image = gray_image.point( lambda p: 255 if p > 80 else 0)
@@ -264,30 +264,58 @@ class Oekoboiler:
         # convert the threshhold image back to RGB so we can draw in color on in
         image = thresh_image.convert('RGB')
         draw = ImageDraw.Draw(image)
-        
 
-        # we know that there are 2 digits, left and right side of the image
-        rois = [(0, 0, int(w/2), h), (int(w/2), 0, w, h)]
+        if withSeperator:
+            seperatorSize = w // numDigits // 4
+        else:
+            seperatorSize = 0    
+
+        # Create rois based on the number of digit
+        rois = []
+        for i in range(0,numDigits):
+
+            seperator = 0
+            # Shift for the seperator, assuming its in the middle
+            if i >= numDigits/2 and withSeperator:
+                seperator = seperatorSize
+
+            #_LOGGER.debug("i: {}, seperator: {}".format(i, seperator))
+
+            roi = (
+                    (i * int((w-seperatorSize)/numDigits)) + seperator,
+                    0, 
+                    ((i+1) * int((w-seperatorSize)/numDigits)) + seperator,
+                    h)
+
+            rois.append(roi)
+
+        #rois = [(0, 0, int(w/2), h), (int(w/2), 0, w, h)]
+
+        # draw seperator
+        if withSeperator:
+            draw.rectangle((int(w/numDigits)*numDigits/2 - seperatorSize//2 ,0,(int(w/numDigits)*numDigits/2 + seperatorSize//2,h)), fill="grey", outline="grey", width=1)
+
+        #_LOGGER.debug("Rois: {}".format(rois))
 
         digits = []
 
         # go trough all region of interest (digits)
         for roi in rois:
             #print ("Roi {} ".format(roi))
-            draw.rectangle(roi, outline="yellow", width=1)
+            draw.rectangle(roi, outline="yellow", width=2)
 
             # as migt not begin at the border of the roi
             # scan roi from the right to left until the digit really begins
             adapted_roi = roi
             for i in range(roi[2]-1, roi[0], -1):
                 crop = (i-1,0, i,roi[3]-roi[1]-1)
-                #print ("Scaning roi for right end {}".format(i))
+                print ("Scaning roi for right end {}".format(i))
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
                 total = sum(scan.point( bool).getdata())
                 if total > 10:
-                    #print("{} > 10".format(total))
+                    print("{} > 10".format(total))
                     adapted_roi = (adapted_roi[0],adapted_roi[1],i,adapted_roi[3])
                     break
 
@@ -296,13 +324,13 @@ class Oekoboiler:
             #scan from left to right
             for i in range(roi[0], roi[0]+((roi[2]- roi[0]) // 2)):
                 crop = (i,0, i+1,roi[3]-roi[1]-1)
-                #print ("Scaning roi for left end {}".format(i))
+                print ("Scaning roi for left end {}".format(i))
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
                 total = sum(scan.point( bool).getdata())
                 if total > 10:
-                    #print("{} > 10".format(total))
+                    print("{} > 10".format(total))
                     adapted_roi = (i,adapted_roi[1],adapted_roi[2],adapted_roi[3])
                     break
                
@@ -463,6 +491,11 @@ class Oekoboiler:
             if "waterTemp_segments" in self._image:
                 boundry = self._boundries["waterTemp"]
                 new_im.paste(self._image["waterTemp_segments"], (boundry[0], boundry[1]))
+
+            # Paste time
+            if "time_segments" in self._image:
+                boundry = self._boundries["time"]
+                new_im.paste(self._image["time_segments"], (boundry[0], boundry[1]))
             
 
             img_byte_arr = io.BytesIO()
@@ -512,7 +545,7 @@ if __name__ == "__main__":
                 if image is not None:
                     oekoboiler.processImage(image)
 
-                    #print("Time {}".format(oekoboiler.time))
+                    print("Time {}".format(oekoboiler.time))
                     print("Mode {}".format(oekoboiler.mode))
                     print("State {}".format(oekoboiler.state))
                     print("Water Temp {}".format(oekoboiler.waterTemperature))
