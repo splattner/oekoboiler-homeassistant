@@ -255,7 +255,7 @@ class Oekoboiler:
         if level > 1:
             level = 1
 
-        return level
+        return level * 100
 
 
     def _isIlluminated(self, image, title=""):
