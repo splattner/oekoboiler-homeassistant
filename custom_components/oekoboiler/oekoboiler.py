@@ -38,6 +38,8 @@ DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 355, 265, 380)
 
 DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
 
+DEFAULT_BOUNDRY_LEVEL = (785, 189, 795, 398)
+
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 
 IMAGE_SPACING = 10
@@ -70,6 +72,7 @@ class Oekoboiler:
         self._mode = ""
         self._state = ""
         self._time = ""
+        self._level = 0
 
         self._indicator = {
             "off": False,
@@ -91,6 +94,7 @@ class Oekoboiler:
             "indicatorDef": DEFAULT_BOUNDRY_INDICATOR_DEF,
             "indicatorWarm": DEFAULT_BOUNDRY_INDICATOR_WARM,
             "indicatorHighTemp": DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP,
+            "level": DEFAULT_BOUNDRY_LEVEL,
         }
 
         self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
@@ -121,7 +125,6 @@ class Oekoboiler:
 
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
-
         try:
             digits, value = self._findDigits(img_time, "time", numDigits=4, withSeperator=True)
             if len(digits) == 4:
@@ -132,7 +135,6 @@ class Oekoboiler:
 
         # Set Temperature 
         img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
-
         try:
             digit, value = self._findDigits(img_setTemp, "setTemp", numDigits=2)
             _LOGGER.debug("Set Temperature read: {}".format(value))
@@ -146,7 +148,6 @@ class Oekoboiler:
 
         # Water Temperature
         img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
-
         try:
             digits,value = self._findDigits(img_waterTemp, "waterTemp", numDigits=2)
             _LOGGER.debug("Water Temperature read: {}".format(value))
@@ -210,8 +211,13 @@ class Oekoboiler:
         if self._indicator["off"]:
             self._state = "Off"
 
+        # High Temp Indicator
         img_highTempIndicator = self._cropToBoundry(image, self._boundries["indicatorHighTemp"], removeBlue=True)
         self._indicator["highTemp"] = self._isIlluminated(img_highTempIndicator, "indicatorHighTemp")
+
+        img_level = self._cropToBoundry(image, self._boundries["level"])
+        self._level = self._getLevel(img_level)
+
 
         self.updatedProcessedImage(original_image)
      
@@ -230,11 +236,32 @@ class Oekoboiler:
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = image
 
+    def _getLevel(self, image): 
+
+        w,h = image.size
+
+        gray = image.convert('L')
+        thresh = gray.point( lambda p: 255 if p > 90 else 0)
+        nonZeroValue = sum(thresh.point( bool).getdata())
+
+        unitSize = h / 31 # there are 9 levels and 8 seperator. A Level has ~3 uits and a seperator 1 unit
+        area = w * h - (8 * w*unitSize)
+
+        _LOGGER.debug("NonZero {}, Area {}".format(nonZeroValue, area))
+
+        self._image["level"] = thresh
+
+        level = nonZeroValue / area
+        if level > 1:
+            level = 1
+
+        return level
+
 
     def _isIlluminated(self, image, title=""):
 
 
-        h, w = image.size
+        w,h = image.size
         threshold = h*w*self._threshhold_illumination*0.4
 
         gray = image.convert('L')
@@ -458,6 +485,10 @@ class Oekoboiler:
         return self._indicator
 
     @property
+    def level(self):
+        return self._level
+
+    @property
     def image(self):
         _LOGGER.debug("Request Processes Image")
 
@@ -496,6 +527,11 @@ class Oekoboiler:
             if "time_segments" in self._image:
                 boundry = self._boundries["time"]
                 new_im.paste(self._image["time_segments"], (boundry[0], boundry[1]))
+
+            # Paste time
+            if "level" in self._image:
+                boundry = self._boundries["level"]
+                new_im.paste(self._image["level"], (boundry[0], boundry[1]))
             
 
             img_byte_arr = io.BytesIO()
@@ -552,6 +588,8 @@ if __name__ == "__main__":
                     print("Set Temp {}".format(oekoboiler.setTemperature))
 
                     print("High Temp {}".format(oekoboiler.indicator["highTemp"]))
+
+                    print("Level {}".format(oekoboiler.level))
 
                     processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
 

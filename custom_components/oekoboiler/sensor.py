@@ -10,6 +10,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
     TEMP_CELSIUS, 
     DEVICE_CLASS_TEMPERATURE,
+    PERCENTAGE,
 )
 
 from homeassistant.components.image_processing import (
@@ -77,6 +78,16 @@ async def async_setup_entry(
                 oekoboiler=oekoboiler,
                 entry=entry,
                 name="Set Temperature"
+                
+            )
+    )
+
+    # Level Sensor
+    devices.append(OekoboilerLevelSensorEntiry(
+                hass=hass,
+                oekoboiler=oekoboiler,
+                entry=entry,
+                name="Level"
                 
             )
     )
@@ -321,3 +332,59 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     async def async_update(self, **kwargs) -> None:
         self._state = self._oekoboiler.setTemperature
+
+class OekoboilerLevelSensorEntiry(OekoboilerEntity, SensorEntity):
+    def __init__(
+        self,
+        hass: HomeAssistantType,
+        oekoboiler,
+        name,
+        entry,
+        *args,
+        **kwargs,
+    ):
+
+        self._state: int = None
+        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
+
+
+    @property
+    def name(self) -> str:
+        return f"Oekoboiler Level"
+
+    @property
+    def unique_id(self) -> str:
+        return f"oekoboiler_level"
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def state(self) -> int:
+        return self._state
+
+
+
+    @property
+    def state_class(self):
+        return "measurement"
+
+    @property
+    def native_unit_of_measurement(self):
+        """Return the unit the value is expressed in."""
+        return PERCENTAGE
+
+    @property
+    def device_info(self) -> dict:
+        """Return information about the device."""
+        return {
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+            "name": "Oekoboiler",
+            "model": "OekoBoiler",
+            "manufacturer": "Oekoswiss Supply AG",
+            "config_entry_id": self._entry.entry_id
+        }
+
+    async def async_update(self, **kwargs) -> None:
+        self._state = self._oekoboiler.level

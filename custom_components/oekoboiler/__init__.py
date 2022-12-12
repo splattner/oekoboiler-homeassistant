@@ -33,6 +33,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_OFF,
     CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
     CONF_THRESHHOLD_ILLUMINATION,
+    CONF_BOUNDRY_LEVEL
     UPDATE_LISTENER,
 )
 
@@ -51,6 +52,7 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
     DEFAULT_THESHHOLD_ILLUMINATED,
+    DEFAULT_BOUNDRY_LEVEL
 )
 
 from homeassistant.core import HomeAssistant
@@ -95,7 +97,7 @@ async def async_setup_entry(hass, entry) -> bool:
             "indicatorHtg": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)).split(', '))),
             "indicatorDef": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)).split(', '))),
             "indicatorHighTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)).split(', '))),
-
+            "level": tuple(map(int, entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)).split(', '))),
     }
     theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
 
@@ -142,6 +144,7 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
         "indicatorHtg": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
         "indicatorDef": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
         "indicatorHighTemp": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_HIGH_TEMP].split(', '))),
+        "level": tuple(map(int, entry.options[CONF_BOUNDRY_LEVEL].split(', '))),
     }
 
     theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
