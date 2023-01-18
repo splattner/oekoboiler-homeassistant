@@ -160,7 +160,7 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_LEVEL,
-                default=self.config_entry.options.get(CONF_BOUNDRY_LEVEL, str(DEFAULT_BOUNDRY_LEVEL)),
+                default=self.config_entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)),
             ): cv.string,
         }
         

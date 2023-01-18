@@ -12,7 +12,7 @@ CONF_BOUNDRY_INDICATOR_HTG: str = "boundry_indicator_htg"
 CONF_BOUNDRY_INDICATOR_DEF: str = "boundry_indicator_def"
 CONF_BOUNDRY_INDICATOR_OFF: str = "boundry_indicator_off"
 CONF_BOUNDRY_INDICATOR_HIGH_TEMP: str = "boundry_indicator_high_temp"
-CONF_BOUNDRY_LEVEL: str = "boundry_lvevel"
+CONF_BOUNDRY_LEVEL: str = "boundry_level"
 CONF_THRESHHOLD_ILLUMINATION: int = "threshhold_illumination"
 
 DATA_OEKOBOILER_CLIENT = "oekoboiler_client"
