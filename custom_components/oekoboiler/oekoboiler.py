@@ -24,7 +24,7 @@ DIGITS_LOOKUP = {
 
 DEFAULT_BOUNDRY_TIME = (290, 253, 575, 363)
 
-DEFAULT_BOUNDRY_SETTEMP = (630, 210, 710, 285)
+DEFAULT_BOUNDRY_SETTEMP = (625, 210, 705, 285)
 DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 710, 448)
 
 DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
@@ -331,37 +331,31 @@ class Oekoboiler:
             #print ("Roi {} ".format(roi))
             draw.rectangle(roi, outline="yellow", width=2)
 
-            # as migt not begin at the border of the roi
+            # as might not begin at the border of the roi
             # scan roi from the right to left until the digit really begins
             adapted_roi = roi
             for i in range(roi[2]-1, roi[0], -1):
                 crop = (i-1,0, i,roi[3]-roi[1]-1)
-                print ("Scaning roi for right end {}".format(i))
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
                 total = sum(scan.point( bool).getdata())
-                if total > 10:
-                    print("{} > 10".format(total))
+                if total > 2:
                     adapted_roi = (adapted_roi[0],adapted_roi[1],i,adapted_roi[3])
                     break
 
-            #print ("Adapted Roi after scan {} ".format(adapted_roi))
             
             #scan from left to right
             for i in range(roi[0], roi[0]+((roi[2]- roi[0]) // 2)):
                 crop = (i,0, i+1,roi[3]-roi[1]-1)
-                print ("Scaning roi for left end {}".format(i))
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
                 total = sum(scan.point( bool).getdata())
-                if total > 10:
-                    print("{} > 10".format(total))
+                if total > 2:
                     adapted_roi = (i,adapted_roi[1],adapted_roi[2],adapted_roi[3])
                     break
                
-            #print ("Adapted Roi after scan {} ".format(adapted_roi))
             draw.rectangle(adapted_roi, outline="green", width=1)
 
             roi = adapted_roi
@@ -409,13 +403,19 @@ class Oekoboiler:
                 _LOGGER.debug("Title {} Segment {} Area {} Total {}".format(title, i, area,total))
                 
                 draw.text((roi[0]+xA, roi[1]+yA), str(i))
+
+                theshhold = 0.3
+                # lower theshhold a bit for top line
+                #if i == 0:
+                #    theshhold = 0.35
                 
-                if area > 0 and total / float(area) > 0.4:
+                if area > 0 and total / float(area) > theshhold:
                     on[i]= 1
                     draw.rectangle([(roi[0]+xA,roi[1]+yA),(roi[0]+xB,roi[1]+yB)], outline="red", width=1)
-
                 else:
                     draw.rectangle([(roi[0]+xA,roi[1]+yA),(roi[0]+xB,roi[1]+yB)], outline="blue", width=1)
+
+                #draw.text((roi[0]+xA, roi[1]+yA + 10), str(total / float(area)), fill="orange")
 
             
             if title is not None:
