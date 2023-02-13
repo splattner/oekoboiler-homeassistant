@@ -24,8 +24,8 @@ DIGITS_LOOKUP = {
 
 DEFAULT_BOUNDRY_TIME = (290, 253, 575, 363)
 
-DEFAULT_BOUNDRY_SETTEMP = (625, 210, 705, 285)
-DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 710, 448)
+DEFAULT_BOUNDRY_SETTEMP = (625, 210, 710, 285)
+DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 715, 448)
 
 DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
 DEFAULT_BOUNDRY_MODE_AUTO = (15, 300, 170, 330)
@@ -284,7 +284,7 @@ class Oekoboiler:
     def _findDigits(self, image, title="", segment_resize_factor=1, numDigits = 2, withSeperator=False):
 
         gray_image = image.convert('L')
-        thresh_image = gray_image.point( lambda p: 255 if p > 80 else 0)
+        thresh_image = gray_image.point( lambda p: 255 if p > 110 else 0)
         w,h = thresh_image.size
         _LOGGER.debug("Image Size {} {}/{} ".format(title, w,h))
 
