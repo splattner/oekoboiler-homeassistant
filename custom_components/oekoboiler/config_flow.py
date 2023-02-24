@@ -22,6 +22,7 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
     DEFAULT_THESHHOLD_ILLUMINATED,
+    DEFAULT_THESHHOLD_GRAY,
     DEFAULT_BOUNDRY_LEVEL
 )
 
@@ -41,6 +42,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_OFF,
     CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
     CONF_THRESHHOLD_ILLUMINATION,
+    CONF_THRESHHOLD_GRAY,
     CONF_BOUNDRY_LEVEL
 )
 
@@ -157,6 +159,10 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
                 default=self.config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED)),
+            ): cv.string,
+            vol.Required(
+                CONF_THRESHHOLD_GRAY,
+                default=self.config_entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_LEVEL,

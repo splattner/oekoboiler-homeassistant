@@ -41,6 +41,7 @@ DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
 DEFAULT_BOUNDRY_LEVEL = (785, 189, 795, 398)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
+DEFAULT_THESHHOLD_GRAY = 70
 
 IMAGE_SPACING = 10
 
@@ -98,6 +99,7 @@ class Oekoboiler:
         }
 
         self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
+        self._threshhold_gray = DEFAULT_THESHHOLD_GRAY
 
         self._image = dict()
 
@@ -109,10 +111,16 @@ class Oekoboiler:
         _LOGGER.debug("new Boundries {}".format(self._boundries))
 
     def setThreshholdIllumination(self, threshhold: int):
-        _LOGGER.debug("Set new Threshold")
+        _LOGGER.debug("Set new Illumination Threshold")
         self._threshhold_illumination = threshhold / 100
 
-        _LOGGER.debug("new Threshold {}".format(self._threshhold_illumination))
+        _LOGGER.debug("new Illumination Threshold {}".format(self._threshhold_illumination))
+
+    def setThreshholdGray(self, threshhold: int):
+        _LOGGER.debug("Set new Gray Threshold")
+        self._threshhold_gray = threshhold / 100
+
+        _LOGGER.debug("new Gray Threshold {}".format(self._threshhold_gray))
 
     def processImage(self, original_image):
         _LOGGER.debug("Processing image")
@@ -284,7 +292,7 @@ class Oekoboiler:
     def _findDigits(self, image, title="", segment_resize_factor=1, numDigits = 2, withSeperator=False):
 
         gray_image = image.convert('L')
-        thresh_image = gray_image.point( lambda p: 255 if p > 110 else 0)
+        thresh_image = gray_image.point( lambda p: 255 if p > self._threshhold_gray else 0)
         w,h = thresh_image.size
         _LOGGER.debug("Image Size {} {}/{} ".format(title, w,h))
 

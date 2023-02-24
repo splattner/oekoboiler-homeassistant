@@ -28,7 +28,8 @@
                     "boundry_indicator_off": "Boundry Box for Off Indicator",
                     "boundry_indicator_high_temp": "Boundry Box for Hight Temp Indicator",
                     "boundry_level": "Boundry Box for Level Indicator",
-                    "threshhold_illumination": "Threshhold for the illumination"
+                    "threshhold_illumination": "Threshhold for the illumination",
+                    "threshhold_gray": "Threshhold for the gray"
                 }
             }
         }

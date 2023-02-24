@@ -33,6 +33,7 @@ from .const import (
     CONF_BOUNDRY_INDICATOR_OFF,
     CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
     CONF_THRESHHOLD_ILLUMINATION,
+    CONF_THRESHHOLD_GRAY,
     CONF_BOUNDRY_LEVEL,
     UPDATE_LISTENER,
 )
@@ -52,6 +53,7 @@ from .oekoboiler import (
     DEFAULT_BOUNDRY_MODE_ECON,
     DEFAULT_BOUNDRY_MODE_HEATER,
     DEFAULT_THESHHOLD_ILLUMINATED,
+    DEFAULT_THESHHOLD_GRAY,
     DEFAULT_BOUNDRY_LEVEL
 )
 
@@ -100,10 +102,12 @@ async def async_setup_entry(hass, entry) -> bool:
             "level": tuple(map(int, entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)).split(', '))),
     }
     theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
+    theshhold_gray = entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY))
 
     
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
+    oekoboiler.setThreshholdGray(int(theshhold_gray))
 
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
@@ -148,9 +152,11 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
     }
 
     theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
+    theshhold_gray = entry.options[CONF_THRESHHOLD_GRAY]
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
     oekoboiler.setBoundries(boundries)
     oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
+    oekoboiler.setThreshholGray(int(theshhold_gray))
 
     camera = hass.components.camera
     cameraImage = None
