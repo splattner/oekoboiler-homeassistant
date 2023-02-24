@@ -118,7 +118,7 @@ class Oekoboiler:
 
     def setThreshholdGray(self, threshhold: int):
         _LOGGER.debug("Set new Gray Threshold")
-        self._threshhold_gray = threshhold / 100
+        self._threshhold_gray = int(threshhold)
 
         _LOGGER.debug("new Gray Threshold {}".format(self._threshhold_gray))
 
