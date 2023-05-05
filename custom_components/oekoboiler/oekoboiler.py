@@ -24,21 +24,21 @@ DIGITS_LOOKUP = {
 
 DEFAULT_BOUNDRY_TIME = (290, 253, 575, 363)
 
-DEFAULT_BOUNDRY_SETTEMP = (625, 210, 710, 285)
-DEFAULT_BOUNDRY_WATERTEMP = (630, 375, 715, 448)
+DEFAULT_BOUNDRY_SETTEMP = (625, 216, 710, 290)
+DEFAULT_BOUNDRY_WATERTEMP = (620, 377, 705, 450)
 
-DEFAULT_BOUNDRY_MODE_ECON = (15, 210, 170, 230)
-DEFAULT_BOUNDRY_MODE_AUTO = (15, 300, 170, 330)
-DEFAULT_BOUNDRY_MODE_HEATER = (15, 350, 170, 380)
+DEFAULT_BOUNDRY_MODE_ECON = (15, 195, 170, 215)
+DEFAULT_BOUNDRY_MODE_AUTO = (15, 285, 170, 315)
+DEFAULT_BOUNDRY_MODE_HEATER = (15, 335, 170, 365)
 
-DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 265, 265, 290)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 238, 265, 263)
-DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 295, 265, 320)
-DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 355, 265, 380)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 255, 265, 280)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 228, 265, 253)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 285, 265, 310)
+DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 345, 265, 370)
 
 DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
 
-DEFAULT_BOUNDRY_LEVEL = (785, 189, 795, 398)
+DEFAULT_BOUNDRY_LEVEL = (780, 194, 795, 402)
 
 DEFAULT_THESHHOLD_ILLUMINATED = 66
 DEFAULT_THESHHOLD_GRAY = 70
@@ -540,6 +540,17 @@ class Oekoboiler:
             if "level" in self._image:
                 boundry = self._boundries["level"]
                 new_im.paste(self._image["level"], (boundry[0], boundry[1]))
+
+            
+
+            # ## Grid
+            # for x in range(10,w_processedImage,10):
+            #     draw = ImageDraw.Draw(new_im)
+            #     draw.line((x,0,x,h_processedImage), width=1, fill="#222222")
+            # for y in range(10,h_processedImage,10):
+            #     draw = ImageDraw.Draw(new_im)
+            #     draw.line((0,y,w_processedImage,y), width=1, fill="#222222")
+
             
 
             img_byte_arr = io.BytesIO()
