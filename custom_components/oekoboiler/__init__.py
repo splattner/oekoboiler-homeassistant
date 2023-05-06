@@ -116,7 +116,10 @@ async def async_setup_entry(hass, entry) -> bool:
     hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER] = update_listener
 
 
-    hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    for platform in PLATFORMS:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, platform)
+        )
 
     return True
 
