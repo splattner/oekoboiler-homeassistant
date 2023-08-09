@@ -139,7 +139,6 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.entry_id
         }
 
     async def async_update(self, **kwargs) -> None:
@@ -209,7 +208,6 @@ class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.entry_id
         }
 
     async def async_update(self, **kwargs) -> None:
@@ -269,7 +267,6 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.entry_id
         }
 
     async def async_update(self, **kwargs) -> None:
@@ -327,7 +324,6 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.entry_id
         }
 
     async def async_update(self, **kwargs) -> None:
@@ -383,7 +379,6 @@ class OekoboilerLevelSensorEntiry(OekoboilerEntity, SensorEntity):
             "name": "Oekoboiler",
             "model": "OekoBoiler",
             "manufacturer": "Oekoswiss Supply AG",
-            "config_entry_id": self._entry.entry_id
         }
 
     async def async_update(self, **kwargs) -> None:
