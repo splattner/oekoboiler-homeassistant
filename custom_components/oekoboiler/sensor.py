@@ -41,12 +41,12 @@ async def async_setup_entry(
 
     pass
 
-    devices: dict = []
+    entities: list[OekoboilerEntity] = []
 
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
 
     # Mode Sensor
-    devices.append(OekoboilerModeSensorEntiry(
+    entities.append(OekoboilerModeSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -55,7 +55,7 @@ async def async_setup_entry(
     )
 
     # State Sensor
-    devices.append(OekoboilerStateSensorEntiry(
+    entities.append(OekoboilerStateSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -64,7 +64,7 @@ async def async_setup_entry(
     )
 
     # Water Temp Sensor
-    devices.append(OekoboilerWaterTempSensorEntiry(
+    entities.append(OekoboilerWaterTempSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -73,7 +73,7 @@ async def async_setup_entry(
     )
 
     # Set Temp Sensor
-    devices.append(OekoboilerSetTempSensorEntiry(
+    entities.append(OekoboilerSetTempSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -83,7 +83,7 @@ async def async_setup_entry(
     )
 
     # Level Sensor
-    devices.append(OekoboilerLevelSensorEntiry(
+    entities.append(OekoboilerLevelSensorEntiry(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
@@ -92,7 +92,7 @@ async def async_setup_entry(
             )
     )
 
-    async_add_entities(device for device in devices)
+    async_add_entities(entities, True)
 
 
 

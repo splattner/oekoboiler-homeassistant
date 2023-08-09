@@ -31,20 +31,15 @@ async def async_setup_entry(
 
     pass
 
-    devices: dict = []
 
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
 
-    # Mode Sensor
-    devices.append(OekoboilerProcessedImageCamera(
+
+    async_add_entities([OekoboilerProcessedImageCamera(
                 hass=hass,
                 oekoboiler=oekoboiler,
                 entry=entry,
-            )
-    )
-
-
-    async_add_entities(device for device in devices)
+            )])
 
 
 
