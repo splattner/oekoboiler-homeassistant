@@ -22,26 +22,26 @@ DIGITS_LOOKUP = {
 	(1, 1, 1, 1, 0, 1, 1): 9
 }
 
-DEFAULT_BOUNDRY_TIME = (290, 253, 575, 363)
+DEFAULT_BOUNDRY_TIME = (280, 253, 569, 368)
 
-DEFAULT_BOUNDRY_SETTEMP = (625, 216, 710, 290)
-DEFAULT_BOUNDRY_WATERTEMP = (620, 377, 705, 450)
+DEFAULT_BOUNDRY_SETTEMP = (615, 223, 700, 295)
+DEFAULT_BOUNDRY_WATERTEMP = (620, 383, 705, 455)
 
-DEFAULT_BOUNDRY_MODE_ECON = (15, 195, 170, 215)
-DEFAULT_BOUNDRY_MODE_AUTO = (15, 285, 170, 315)
-DEFAULT_BOUNDRY_MODE_HEATER = (15, 335, 170, 365)
+DEFAULT_BOUNDRY_MODE_ECON = (20, 220, 170, 240)
+DEFAULT_BOUNDRY_MODE_AUTO = (20, 295, 170, 320)
+DEFAULT_BOUNDRY_MODE_HEATER = (20, 380, 170, 410)
 
-DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 255, 265, 280)
-DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 228, 265, 253)
-DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 285, 265, 310)
-DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 345, 265, 370)
+DEFAULT_BOUNDRY_INDICATOR_OFF = (210, 185, 270, 215)
+DEFAULT_BOUNDRY_INDICATOR_HTG = (210, 235, 270, 265)
+DEFAULT_BOUNDRY_INDICATOR_DEF = (210, 290, 270, 320)
+DEFAULT_BOUNDRY_INDICATOR_WARM = (210, 345, 270, 375)
 
 DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP = (480, 170, 540, 200)
 
-DEFAULT_BOUNDRY_LEVEL = (780, 194, 795, 402)
+DEFAULT_BOUNDRY_LEVEL = (770, 194, 795, 402)
 
-DEFAULT_THESHHOLD_ILLUMINATED = 66
-DEFAULT_THESHHOLD_GRAY = 70
+DEFAULT_THESHHOLD_ILLUMINATED = 55
+DEFAULT_THESHHOLD_GRAY = 60
 
 IMAGE_SPACING = 10
 
@@ -61,7 +61,7 @@ class Deformer:
                 (0, 0, w, h),
                 # corresponding source quadrilateral
                 # TOP LEFT, BOTTOM LEFT, BOTTOM RIGHT, TOP RIGHT
-                (0, 0, 0, h, w*1.0, h*1, w*0.98, 0)
+                (0, 0, 0, h, w*0.99, h*1, w*1.01, 0)
                 )]
 
 class Oekoboiler:
@@ -130,6 +130,7 @@ class Oekoboiler:
 
         # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
+        #image = original_image
 
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
@@ -235,6 +236,7 @@ class Oekoboiler:
 
         # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
+        #image = original_image
         draw = ImageDraw.Draw(image)
         
         for key, value in self._boundries.items():
