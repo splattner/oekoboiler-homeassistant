@@ -8,6 +8,6 @@
     "iot_class": "calculated",
     "loggers": ["oekoboiler"],
     "requirements": [
-      "pillow==10.1.0"
+      "pillow==10.3.0"
     ]
   }
