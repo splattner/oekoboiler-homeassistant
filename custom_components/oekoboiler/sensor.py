@@ -21,6 +21,8 @@ from homeassistant.components.image_processing import (
 
 from homeassistant.core import HomeAssistant
 
+from homeassistant.components.camera import async_get_image
+
 from .const import (
     DOMAIN,
     DATA_OEKOBOILER_CLIENT,
@@ -143,14 +145,12 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 
     async def async_update(self, **kwargs) -> None:
 
-        camera = self._hass.components.camera
         cameraImage = None
 
         try:
-            cameraImage = await camera.async_get_image(
-                self._camera_entity, timeout=self._timeout
+            camera_image = await async_get_image(
+                self._hass, self._camera_entity, timeout=self._timeout
             )
-
 
         except HomeAssistantError as err:
             _LOGGER.error("Error on receive image from entity: %s", err)
