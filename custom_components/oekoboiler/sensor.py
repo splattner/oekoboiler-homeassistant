@@ -148,10 +148,9 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
         cameraImage = None
 
         try:
-            camera_image = await async_get_image(
+            cameraImage = await async_get_image(
                 self._hass, self._camera_entity, timeout=self._timeout
             )
-
         except HomeAssistantError as err:
             _LOGGER.error("Error on receive image from entity: %s", err)
             return
