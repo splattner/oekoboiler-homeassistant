@@ -8,9 +8,7 @@ from typing import Callable, Union
 from PIL import Image
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import HomeAssistantError
-
-from homeassistant.helpers.typing import HomeAssistantType
+from homeassistant.core import HomeAssistant
 
 from .const import (
     DOMAIN,
@@ -24,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType, 
+    hass: HomeAssistant, 
     entry: ConfigEntry, 
     async_add_entities: Callable
 ) -> None:
@@ -46,7 +44,7 @@ async def async_setup_entry(
 class OekoboilerProcessedImageCamera(OekoboilerCamera):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         entry,
         *args,

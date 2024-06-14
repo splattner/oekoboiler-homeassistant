@@ -61,7 +61,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.core import HomeAssistant
 
 from homeassistant.components.camera import Camera
 
@@ -189,7 +189,7 @@ class OekoboilerEntity(Entity):
 
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler: Oekoboiler,
         entry: ConfigEntry,
         name: str = "",
@@ -223,7 +223,7 @@ class OekoboilerCamera(Camera):
 
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler: Oekoboiler,
         entry: ConfigEntry,
     ):

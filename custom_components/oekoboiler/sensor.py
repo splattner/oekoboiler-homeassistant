@@ -19,7 +19,7 @@ from homeassistant.components.image_processing import (
     ImageProcessingEntity,
 )
 
-from homeassistant.helpers.typing import ConfigType, HomeAssistantType
+from homeassistant.core import HomeAssistant
 
 from .const import (
     DOMAIN,
@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistantType, 
+    hass: HomeAssistant, 
     entry: ConfigEntry, 
     async_add_entities: Callable
 ) -> None:
@@ -99,7 +99,7 @@ async def async_setup_entry(
 class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         name,
         entry,
@@ -169,7 +169,7 @@ class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
 class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         name,
         entry,
@@ -217,7 +217,7 @@ class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
 class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         name,
         entry,
@@ -275,7 +275,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
 class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         name,
         entry,
@@ -332,7 +332,7 @@ class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
 class OekoboilerLevelSensorEntiry(OekoboilerEntity, SensorEntity):
     def __init__(
         self,
-        hass: HomeAssistantType,
+        hass: HomeAssistant,
         oekoboiler,
         name,
         entry,
