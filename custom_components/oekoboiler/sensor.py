@@ -8,9 +8,9 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
-    TEMP_CELSIUS, 
     DEVICE_CLASS_TEMPERATURE,
     PERCENTAGE,
+    UnitOfTemperature,
 )
 
 from homeassistant.components.image_processing import (
@@ -255,7 +255,7 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
     @property
     def unit_of_measurement(self):
         """Return the unit the value is expressed in."""
-        return TEMP_CELSIUS
+        return UnitOfTemperature.CELSIUS
 
 
     @property
