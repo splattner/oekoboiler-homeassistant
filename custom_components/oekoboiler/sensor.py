@@ -4,12 +4,10 @@ from typing import Callable, Union
 
 from PIL import Image
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.const import (
-    DEVICE_CLASS_TEMPERATURE,
-    SensorDeviceClass,
     PERCENTAGE,
     UnitOfTemperature,
 )
