@@ -5,6 +5,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.data_entry_flow import FlowResult
 
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import selector
 
 from homeassistant.components.camera import DOMAIN as CAMERA_DOMAIN
 
@@ -82,10 +83,17 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
                 data=user_input
             )
 
+        camera_selector_field = vol.Required(CONF_CAMERA_ENTITY_ID)
+        if self.device_config.get(CONF_CAMERA_ENTITY_ID):
+            camera_selector_field = vol.Required(
+                CONF_CAMERA_ENTITY_ID,
+                default=self.device_config[CONF_CAMERA_ENTITY_ID],
+            )
+
         data_schema = {
-            vol.Required(CONF_CAMERA_ENTITY_ID, 
-                         default=self.device_config[CONF_CAMERA_ENTITY_ID]
-                         ): cv.string,
+            camera_selector_field: selector.EntitySelector(
+                selector.EntitySelectorConfig(domain=CAMERA_DOMAIN)
+            ),
         }
 
         #vol.Any(cv.entity_id, cv.entity_domain(CAMERA_DOMAIN)
