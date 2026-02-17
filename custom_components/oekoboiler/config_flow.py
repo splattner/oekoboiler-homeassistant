@@ -112,7 +112,7 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
 class OekoBoilerOptionsFlowHandler(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry):
         """Initialize options flow."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None) -> FlowResult:
         """Manage the options."""
@@ -122,59 +122,59 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
         options = {
             vol.Required(
                 CONF_BOUNDRY_TIME,
-                default=self.config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_SETTEMP,
-                default=self.config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_WATERTEMP,
-                default=self.config_entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_ECON,
-                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_AUTO,
-                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_HEATER,
-                default=self.config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_WARM,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HTG,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_DEF,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_OFF,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
-                default=self.config_entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)),
             ): cv.string,
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
-                default=self.config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED)),
+                default=self._config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED)),
             ): cv.string,
             vol.Required(
                 CONF_THRESHHOLD_GRAY,
-                default=self.config_entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY)),
+                default=self._config_entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY)),
             ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_LEVEL,
-                default=self.config_entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)),
+                default=self._config_entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)),
             ): cv.string,
         }
         
