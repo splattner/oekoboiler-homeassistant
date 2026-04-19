@@ -7,7 +7,7 @@ from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
-from . import OekoboilerEntity
+from .entities import OekoboilerEntity
 from .const import DATA_COORDINATOR, DATA_OEKOBOILER_CLIENT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)

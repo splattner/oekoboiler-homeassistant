@@ -12,7 +12,7 @@ from .const import (
     DATA_OEKOBOILER_CLIENT,
 )
 
-from . import OekoboilerCamera
+from .entities import OekoboilerCamera
 
 
 _LOGGER = logging.getLogger(__name__)

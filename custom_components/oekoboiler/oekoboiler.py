@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from __future__ import annotations
+
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps, ImageStat
 
 import logging
 import io
+import importlib.util
 import os
+from pathlib import Path
+import sys
+import time
 import requests
 from typing import Optional
+
+try:
+    from .models import AlignmentResult, ParsedFrame
+except ImportError:  # pragma: no cover - allows direct script execution
+    _MODELS_PATH = Path(__file__).with_name("models.py")
+    _MODELS_SPEC = importlib.util.spec_from_file_location("oekoboiler_models", _MODELS_PATH)
+    if _MODELS_SPEC is None or _MODELS_SPEC.loader is None:
+        raise RuntimeError("Unable to load models module")
+    _MODELS_MODULE = importlib.util.module_from_spec(_MODELS_SPEC)
+    sys.modules[_MODELS_SPEC.name] = _MODELS_MODULE
+    _MODELS_SPEC.loader.exec_module(_MODELS_MODULE)
+    AlignmentResult = _MODELS_MODULE.AlignmentResult
+    ParsedFrame = _MODELS_MODULE.ParsedFrame
 
 
 BLUE_START_THRESHOLD = 40
@@ -49,6 +68,15 @@ IMAGE_SPACING = 10
 TEMPTERATURE_UPPER_VALID = 100
 TEMPTERATURE_LOWER_VALID = 0
 
+ALIGNMENT_DOWNSAMPLED_SIZE = (160, 90)
+ALIGNMENT_MAX_SHIFT = 8
+ALIGNMENT_ERROR_THRESHOLD = 14.0
+ALIGNMENT_DEADBAND_PX = 1
+ALIGNMENT_MAX_STEP_PX = 12
+ALIGNMENT_BORDER_RATIO = 0.20
+
+LEVEL_BAR_COUNT = 9
+
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,22 +97,7 @@ class Oekoboiler:
 
     def __init__(self):
 
-        self._setTemperature = 0
-        self._waterTemperature = 0
-        self._mode = ""
-        self._state = ""
-        self._time = ""
-        self._level = 0
-
-        self._indicator = {
-            "off": False,
-            "htg": False,
-            "def": False,
-            "warm": False,
-            "highTemp": False
-        }
-
-        self._boundries = {
+        self._boundaries = {
             "time": DEFAULT_BOUNDRY_TIME,
             "setTemp": DEFAULT_BOUNDRY_SETTEMP,
             "waterTemp": DEFAULT_BOUNDRY_WATERTEMP,
@@ -99,55 +112,61 @@ class Oekoboiler:
             "level": DEFAULT_BOUNDRY_LEVEL,
         }
 
-        self._threshhold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
-        self._threshhold_gray = DEFAULT_THESHHOLD_GRAY
+        self._threshold_illumination = DEFAULT_THESHHOLD_ILLUMINATED / 100
+        self._threshold_gray = DEFAULT_THESHHOLD_GRAY
 
         self._image = dict()
         self._frame = 0
-        self._quality = {
-            "time": {"status": "unknown", "confidence": None, "frame": None},
-            "set_temperature": {"status": "unknown", "confidence": None, "frame": None},
-            "water_temperature": {"status": "unknown", "confidence": None, "frame": None},
-            "mode": {"status": "unknown", "confidence": None, "frame": None},
-            "state": {"status": "unknown", "confidence": None, "frame": None},
-            "level": {"status": "unknown", "confidence": None, "frame": None},
-        }
+        self._parsed_frame = ParsedFrame()
+        self._working_frame = None
+        self._previous_alignment_image = None
+        self._raw_alignment_shift = (0, 0)
+        self._alignment_shift = (0, 0)
+        self._alignment_error = None
+        self._active_boundaries = dict(self._boundaries)
+        self._last_level_bars = None
 
     def _set_quality(self, key: str, status: str, confidence: Optional[float] = None):
-        self._quality[key] = {
-            "status": status,
-            "confidence": round(confidence, 3) if confidence is not None else None,
-            "frame": self._frame,
-        }
+        if self._working_frame is None:
+            return
+
+        self._working_frame.set_quality(key, status, self._frame, confidence)
 
     def _set_failed_quality(self, key: str, confidence: Optional[float] = None):
-        previous_status = self._quality.get(key, {}).get("status")
-        status = "stale" if previous_status == "ok" else "unknown"
-        self._set_quality(key, status, confidence)
+        if self._working_frame is None:
+            return
+
+        self._working_frame.set_failed_quality(key, self._frame, confidence)
+
+    def _create_next_frame(self):
+        next_frame = self._parsed_frame.clone()
+        next_frame.alignment = AlignmentResult()
+        return next_frame
 
 
-    def setBoundries(self, boundries):
+    def setBoundries(self, boundaries):
         _LOGGER.debug("Set new boundries")
-        self._boundries = boundries
+        self._boundaries = boundaries
 
-        _LOGGER.debug("new Boundries {}".format(self._boundries))
+        _LOGGER.debug("new Boundries {}".format(self._boundaries))
 
-    def setThreshholdIllumination(self, threshhold: int):
+    def setThreshholdIllumination(self, threshold: int):
         _LOGGER.debug("Set new Illumination Threshold")
-        self._threshhold_illumination = threshhold / 100
+        self._threshold_illumination = threshold / 100
 
-        _LOGGER.debug("new Illumination Threshold {}".format(self._threshhold_illumination))
+        _LOGGER.debug("new Illumination Threshold {}".format(self._threshold_illumination))
 
-    def setThreshholdGray(self, threshhold: int):
+    def setThreshholdGray(self, threshold: int):
         _LOGGER.debug("Set new Gray Threshold")
-        self._threshhold_gray = int(threshhold)
+        self._threshold_gray = int(threshold)
 
-        _LOGGER.debug("new Gray Threshold {}".format(self._threshhold_gray))
+        _LOGGER.debug("new Gray Threshold {}".format(self._threshold_gray))
 
     def processImage(self, original_image):
         _LOGGER.debug("Processing image")
-        _LOGGER.debug("Boundries {}".format(self._boundries))
+        _LOGGER.debug("Boundries {}".format(self._boundaries))
         self._frame += 1
+        self._working_frame = self._create_next_frame()
 
         w, h = original_image.size
 
@@ -155,28 +174,46 @@ class Oekoboiler:
         image = ImageOps.deform(original_image, Deformer())
         #image = original_image
 
+        self._raw_alignment_shift, self._alignment_error = self._estimate_frame_shift(image)
+        self._alignment_shift = self._stabilize_alignment_shift(
+            self._raw_alignment_shift,
+            self._alignment_error,
+        )
+        self._working_frame.alignment = AlignmentResult(
+            raw_shift_x=self._raw_alignment_shift[0],
+            raw_shift_y=self._raw_alignment_shift[1],
+            shift_x=self._alignment_shift[0],
+            shift_y=self._alignment_shift[1],
+            error=self._alignment_error,
+            frame=self._frame,
+        )
+        self._active_boundaries = {
+            key: self._shift_boundary_for_image(boundary, image.size, self._alignment_shift)
+            for key, boundary in self._boundaries.items()
+        }
+
         #Time
-        img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
+        img_time = self._crop_to_boundary(image, self._active_boundaries["time"], removeBlue=True)
         try:
             digits, value, confidence = self._findDigits(img_time, "time", numDigits=4, withSeperator=True)
             if len(digits) == 4 and all(digit is not None for digit in digits):
-                self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
+                self._working_frame.time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
                 self._set_quality("time", "ok", confidence)
             else:
-                self._time = None
+                self._working_frame.time = None
                 self._set_failed_quality("time", confidence)
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
-            self._time  = None
+            self._working_frame.time = None
             self._set_failed_quality("time")
 
         # Set Temperature 
-        img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
+        img_setTemp = self._crop_to_boundary(image, self._active_boundaries["setTemp"])
         try:
             digits, value, confidence = self._findDigits(img_setTemp, "setTemp", numDigits=2)
             _LOGGER.debug("Set Temperature read: {}".format(value))
             if value is not None and value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
-                self._setTemperature = value
+                self._working_frame.set_temperature = value
                 self._set_quality("set_temperature", "ok", confidence)
             else:
                 self._set_failed_quality("set_temperature", confidence)
@@ -187,12 +224,12 @@ class Oekoboiler:
 
 
         # Water Temperature
-        img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
+        img_waterTemp = self._crop_to_boundary(image, self._active_boundaries["waterTemp"])
         try:
             digits, value, confidence = self._findDigits(img_waterTemp, "waterTemp", numDigits=2)
             _LOGGER.debug("Water Temperature read: {}".format(value))
             if value is not None and value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
-                self._waterTemperature = value
+                self._working_frame.water_temperature = value
                 self._set_quality("water_temperature", "ok", confidence)
             else:
                 self._set_failed_quality("water_temperature", confidence)
@@ -203,15 +240,15 @@ class Oekoboiler:
 
 
         # Modus
-        img_modeAuto = self._cropToBoundry(image, self._boundries["modeAuto"])
+        img_modeAuto = self._crop_to_boundary(image, self._active_boundaries["modeAuto"])
         modeAuto, modeAutoConf = self._isIlluminated(img_modeAuto, "modeAuto", with_confidence=True)
 
 
-        img_modeEcon = self._cropToBoundry(image, self._boundries["modeEcon"])
+        img_modeEcon = self._crop_to_boundary(image, self._active_boundaries["modeEcon"])
         modeEcon, modeEconConf = self._isIlluminated(img_modeEcon, "modeEcon", with_confidence=True)
 
 
-        img_modeHeater = self._cropToBoundry(image, self._boundries["modeHeater"])
+        img_modeHeater = self._crop_to_boundary(image, self._active_boundaries["modeHeater"])
         modeHeater, modeHeaterConf = self._isIlluminated(img_modeHeater, "modeHeater", with_confidence=True)
 
         mode_candidates = [
@@ -221,121 +258,307 @@ class Oekoboiler:
         ]
         active_modes = [candidate for candidate in mode_candidates if candidate[1]]
         if len(active_modes) == 1:
-            self._mode = active_modes[0][0]
+            self._working_frame.mode = active_modes[0][0]
             self._set_quality("mode", "ok", active_modes[0][2])
         else:
             best_confidence = max((candidate[2] for candidate in mode_candidates), default=0.0)
             self._set_failed_quality("mode", best_confidence)
 
-        _LOGGER.debug("Mode read: {}".format(self._mode))
+        _LOGGER.debug("Mode read: {}".format(self._working_frame.mode))
 
         # Indicators
-        img_warmIndicator = self._cropToBoundry(image, self._boundries["indicatorWarm"], removeBlue=True)
-        self._indicator["warm"], warmConf = self._isIlluminated(
+        img_warmIndicator = self._crop_to_boundary(image, self._active_boundaries["indicatorWarm"], removeBlue=True)
+        self._working_frame.indicator["warm"], warmConf = self._isIlluminated(
             img_warmIndicator,
             "indicatorWarm",
             with_confidence=True,
         )
 
 
-        img_defIndicator = self._cropToBoundry(image, self._boundries["indicatorDef"], removeBlue=True)
-        self._indicator["def"], defConf = self._isIlluminated(
+        img_defIndicator = self._crop_to_boundary(image, self._active_boundaries["indicatorDef"], removeBlue=True)
+        self._working_frame.indicator["def"], defConf = self._isIlluminated(
             img_defIndicator,
             "indicatorDef",
             with_confidence=True,
         )
 
 
-        img_htgIndicator = self._cropToBoundry(image, self._boundries["indicatorHtg"], removeBlue=True)
-        self._indicator["htg"], htgConf = self._isIlluminated(
+        img_htgIndicator = self._crop_to_boundary(image, self._active_boundaries["indicatorHtg"], removeBlue=True)
+        self._working_frame.indicator["htg"], htgConf = self._isIlluminated(
             img_htgIndicator,
             "indicatorHtg",
             with_confidence=True,
         )
 
 
-        img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
-        self._indicator["off"], offConf = self._isIlluminated(
+        img_offIndicator = self._crop_to_boundary(image, self._active_boundaries["indicatorOff"], removeBlue=True)
+        self._working_frame.indicator["off"], offConf = self._isIlluminated(
             img_offIndicator,
             "indicatorOff",
             with_confidence=True,
         )
 
         state_candidates = [
-            ("Warm", self._indicator["warm"], warmConf),
-            ("Defrosting", self._indicator["def"], defConf),
-            ("Heating", self._indicator["htg"], htgConf),
-            ("Off", self._indicator["off"], offConf),
+            ("Warm", self._working_frame.indicator["warm"], warmConf),
+            ("Defrosting", self._working_frame.indicator["def"], defConf),
+            ("Heating", self._working_frame.indicator["htg"], htgConf),
+            ("Off", self._working_frame.indicator["off"], offConf),
         ]
         active_states = [candidate for candidate in state_candidates if candidate[1]]
         if len(active_states) == 1:
-            self._state = active_states[0][0]
+            self._working_frame.state = active_states[0][0]
             self._set_quality("state", "ok", active_states[0][2])
         else:
             best_confidence = max((candidate[2] for candidate in state_candidates), default=0.0)
             self._set_failed_quality("state", best_confidence)
 
         # High Temp Indicator
-        img_highTempIndicator = self._cropToBoundry(image, self._boundries["indicatorHighTemp"], removeBlue=True)
-        self._indicator["highTemp"] = self._isIlluminated(img_highTempIndicator, "indicatorHighTemp")
+        img_highTempIndicator = self._crop_to_boundary(image, self._active_boundaries["indicatorHighTemp"], removeBlue=True)
+        self._working_frame.indicator["highTemp"] = self._isIlluminated(img_highTempIndicator, "indicatorHighTemp")
 
-        img_level = self._cropToBoundry(image, self._boundries["level"])
+        img_level = self._crop_to_boundary(image, self._active_boundaries["level"])
         try:
-            self._level = self._getLevel(img_level)
-            self._set_quality("level", "ok", 1.0)
+            self._working_frame.level, level_confidence = self._getLevel(img_level)
+            self._set_quality("level", "ok", level_confidence)
         except Exception:
             self._set_failed_quality("level")
 
 
         self.updatedProcessedImage(original_image)
+        self._parsed_frame = self._working_frame
+        self._working_frame = None
      
     def updatedProcessedImage(self, original_image):
 
-        _LOGGER.debug("Update processed Image due to new boundries {}".format(self._boundries))
+        _LOGGER.debug("Update processed Image due to new boundries {}".format(self._boundaries))
 
         # Adapt for rounded display (at least a bit..)
         image = ImageOps.deform(original_image, Deformer())
         #image = original_image
         draw = ImageDraw.Draw(image)
         
-        for key, value in self._boundries.items():
+        active_boundries = self._active_boundaries if self._active_boundaries else self._boundaries
+        for key, value in active_boundries.items():
             draw.rectangle([(value[0],value[1]),(value[2],value[3])], outline="white", width=1)
             draw.text((value[0], value[1]), key)
 
         _LOGGER.debug("Saving processed Image")
         self._image["processed_image"] = image
 
-    def _getLevel(self, image): 
+    def _getLevel(self, image):
+        """Estimate level from 9 vertical bars and return percentage + confidence."""
 
-        w,h = image.size
-
-        gray = image.convert('L')
-        thresh = gray.point( lambda p: 255 if p > 90 else 0)
-        nonZeroValue = sum(thresh.point( bool).getdata())
-
-        unitSize = h / 31 # there are 9 levels and 8 seperator. A Level has ~3 uits and a seperator 1 unit
-        area = w * h - (8 * w*unitSize)
-
-        _LOGGER.debug("NonZero {}, Area {}".format(nonZeroValue, area))
-
+        w, h = image.size
+        gray = image.convert("L")
+        thresh = gray.point(lambda p: 255 if p > 90 else 0)
         self._image["level"] = thresh
 
-        level = nonZeroValue / area
-        if level > 1:
-            level = 1
+        if w <= 0 or h <= 0:
+            return 0.0, 0.0
 
-        return level * 100
+        slot_height = h / float(LEVEL_BAR_COUNT)
+        lit_flags = []
+        slot_scores = []
+
+        for slot_index in range(LEVEL_BAR_COUNT):
+            # bottom -> top mapping
+            y_top = int(h - ((slot_index + 1) * slot_height))
+            y_bottom = int(h - (slot_index * slot_height))
+
+            if y_bottom <= y_top:
+                lit_flags.append(False)
+                slot_scores.append(0.0)
+                continue
+
+            # Ignore border pixels to avoid frame noise.
+            x0 = 1 if w > 2 else 0
+            x1 = w - 1 if w > 2 else w
+
+            # Ignore top and bottom fraction of each slot to reduce separator bleed.
+            trim = max(0, int((y_bottom - y_top) * 0.15))
+            y0 = y_top + trim
+            y1 = y_bottom - trim
+            if y1 <= y0:
+                y0, y1 = y_top, y_bottom
+
+            slot_roi = thresh.crop((x0, y0, x1, y1))
+            area = max(1, (x1 - x0) * (y1 - y0))
+            lit = slot_roi.histogram()[255]
+            fill_ratio = lit / float(area)
+
+            slot_scores.append(fill_ratio)
+            lit_flags.append(fill_ratio >= 0.38)
+
+        # Real bar displays fill from bottom continuously; ignore isolated lit noise above gaps.
+        bars_lit = 0
+        for lit in lit_flags:
+            if lit:
+                bars_lit += 1
+            else:
+                break
+
+        bars_lit = self._apply_level_state_rules(bars_lit)
+
+        # Confidence increases when lit bars are clearly lit and unlit bars remain dark.
+        lit_scores = slot_scores[:bars_lit]
+        unlit_scores = slot_scores[bars_lit:]
+        lit_conf = sum(lit_scores) / len(lit_scores) if lit_scores else 0.0
+        dark_conf = (sum((1.0 - s) for s in unlit_scores) / len(unlit_scores)) if unlit_scores else 1.0
+        confidence = max(0.0, min(1.0, (lit_conf + dark_conf) / 2.0))
+
+        level_percent = (bars_lit / float(LEVEL_BAR_COUNT)) * 100.0
+
+        _LOGGER.debug(
+            "Level bars=%s/%s confidence=%.2f scores=%s",
+            bars_lit,
+            LEVEL_BAR_COUNT,
+            confidence,
+            [round(score, 2) for score in slot_scores],
+        )
+
+        return level_percent, confidence
+
+    def _apply_level_state_rules(self, bars_lit):
+        """Apply state-aware smoothing constraints to level bar count."""
+        bars_lit = max(0, min(LEVEL_BAR_COUNT, int(bars_lit)))
+        previous = self._last_level_bars
+        current_state = self._working_frame.state if self._working_frame is not None else self._parsed_frame.state
+
+        if previous is None:
+            self._last_level_bars = bars_lit
+            return bars_lit
+
+        if current_state == "Heating" and bars_lit < previous:
+            # During heating, level should generally rise, so suppress regressions.
+            bars_lit = previous
+        elif current_state == "Warm" and abs(bars_lit - previous) > 1:
+            # During warm, expect stability; ignore abrupt jumps as likely noise.
+            bars_lit = previous
+
+        self._last_level_bars = bars_lit
+        return bars_lit
+
+    def _build_alignment_anchor_image(self, image):
+        """Build a reduced grayscale image emphasizing stable border regions."""
+        anchor_image = image.convert("L").resize(
+            ALIGNMENT_DOWNSAMPLED_SIZE,
+            Image.Resampling.BILINEAR,
+        )
+
+        w, h = anchor_image.size
+        margin_x = int(w * ALIGNMENT_BORDER_RATIO)
+        margin_y = int(h * ALIGNMENT_BORDER_RATIO)
+
+        # Ignore central dynamic display areas and keep border structure.
+        draw = ImageDraw.Draw(anchor_image)
+        draw.rectangle(
+            (margin_x, margin_y, w - margin_x, h - margin_y),
+            fill=0,
+        )
+
+        return anchor_image
+
+    def _estimate_frame_shift(self, image, max_shift=ALIGNMENT_MAX_SHIFT):
+        """Estimate frame-to-frame translation in pixels."""
+        downsampled = self._build_alignment_anchor_image(image)
+
+        if self._previous_alignment_image is None:
+            self._previous_alignment_image = downsampled
+            return (0, 0), None
+
+        previous = self._previous_alignment_image
+        width, height = downsampled.size
+
+        best_dx = 0
+        best_dy = 0
+        best_error = float("inf")
+
+        for dy in range(-max_shift, max_shift + 1):
+            for dx in range(-max_shift, max_shift + 1):
+                shifted = ImageChops.offset(downsampled, dx, dy)
+
+                # Remove wrapped pixels introduced by offset.
+                if dx > 0:
+                    shifted.paste(0, (0, 0, dx, height))
+                elif dx < 0:
+                    shifted.paste(0, (width + dx, 0, width, height))
+                if dy > 0:
+                    shifted.paste(0, (0, 0, width, dy))
+                elif dy < 0:
+                    shifted.paste(0, (0, height + dy, width, height))
+
+                error = ImageStat.Stat(ImageChops.difference(previous, shifted)).mean[0]
+                if error < best_error:
+                    best_error = error
+                    best_dx = dx
+                    best_dy = dy
+
+        self._previous_alignment_image = downsampled
+
+        scale_x = image.size[0] / float(width)
+        scale_y = image.size[1] / float(height)
+        # best_dx/best_dy align the current frame back to the previous one;
+        # invert sign to get the observed frame motion to apply to boundaries.
+        full_dx = int(round(-best_dx * scale_x))
+        full_dy = int(round(-best_dy * scale_y))
+
+        return (full_dx, full_dy), best_error
+
+    def _stabilize_alignment_shift(self, shift, error):
+        """Gate and smooth raw alignment shifts before applying them to ROIs."""
+        shift_x, shift_y = shift
+
+        if error is not None and error > ALIGNMENT_ERROR_THRESHOLD:
+            return (0, 0)
+
+        if abs(shift_x) <= ALIGNMENT_DEADBAND_PX:
+            shift_x = 0
+        if abs(shift_y) <= ALIGNMENT_DEADBAND_PX:
+            shift_y = 0
+
+        previous_x, previous_y = self._alignment_shift
+        if abs(shift_x - previous_x) > ALIGNMENT_MAX_STEP_PX:
+            shift_x = previous_x
+        if abs(shift_y - previous_y) > ALIGNMENT_MAX_STEP_PX:
+            shift_y = previous_y
+
+        return (int(shift_x), int(shift_y))
+
+    def _shift_boundary_for_image(self, boundary, image_size, shift):
+        """Shift a boundary and clamp it to image limits while preserving size."""
+        image_w, image_h = image_size
+        x1, y1, x2, y2 = boundary
+        dx, dy = shift
+
+        bw = max(1, x2 - x1)
+        bh = max(1, y2 - y1)
+
+        shifted_x1 = x1 + dx
+        shifted_y1 = y1 + dy
+
+        max_x1 = max(0, image_w - bw)
+        max_y1 = max(0, image_h - bh)
+
+        shifted_x1 = max(0, min(shifted_x1, max_x1))
+        shifted_y1 = max(0, min(shifted_y1, max_y1))
+
+        return (
+            int(shifted_x1),
+            int(shifted_y1),
+            int(shifted_x1 + bw),
+            int(shifted_y1 + bh),
+        )
 
 
     def _isIlluminated(self, image, title="", with_confidence=False):
 
 
         w,h = image.size
-        threshold = h*w*self._threshhold_illumination*0.4
+        threshold = h*w*self._threshold_illumination*0.4
 
         gray = image.convert('L')
         thresh = gray.point( lambda p: 255 if p > 50 else 0)
-        nonZeroValue = sum(thresh.point( bool).getdata())
+        nonZeroValue = thresh.histogram()[255]
 
         _LOGGER.debug("{} NonZero {}, Threshhold {}".format(title, nonZeroValue, threshold))
 
@@ -392,7 +615,7 @@ class Oekoboiler:
     def _findDigits(self, image, title="", segment_resize_factor=1, numDigits = 2, withSeperator=False):
 
         gray_image = image.convert('L')
-        thresh_image = gray_image.point( lambda p: 255 if p > self._threshhold_gray else 0)
+        thresh_image = gray_image.point( lambda p: 255 if p > self._threshold_gray else 0)
         w,h = thresh_image.size
         _LOGGER.debug("Image Size {} {}/{} ".format(title, w,h))
 
@@ -453,7 +676,7 @@ class Oekoboiler:
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
-                total = sum(scan.point( bool).getdata())
+                total = scan.histogram()[255]
                 if total > 2:
                     adapted_roi = (adapted_roi[0],adapted_roi[1],i,adapted_roi[3])
                     break
@@ -465,7 +688,7 @@ class Oekoboiler:
                 # Get one pixel line
                 
                 scan = thresh_image.crop(crop)
-                total = sum(scan.point( bool).getdata())
+                total = scan.histogram()[255]
                 if total > 2:
                     adapted_roi = (i,adapted_roi[1],adapted_roi[2],adapted_roi[3])
                     break
@@ -510,7 +733,7 @@ class Oekoboiler:
                 # the area of the segment
                 segROI = im_seg.crop((xA,yA, xB,yB))
 
-                total = sum(segROI.point( bool).getdata())
+                total = segROI.histogram()[255]
                 area = (xB - xA) * (yB - yA)
                 # if the total number of non-zero pixels is greater than
                 # 40% of the area, mark the segment as "on"
@@ -636,7 +859,7 @@ class Oekoboiler:
         return rois
 
 
-    def _cropToBoundry(self, image, boundry, convertToGray=False, removeBlue=False):
+    def _crop_to_boundary(self, image, boundary, convertToGray=False, removeBlue=False):
 
         if removeBlue:
             matrix = (
@@ -649,47 +872,53 @@ class Oekoboiler:
         if convertToGray:
             image = image.convert('L')
         
-        output = image.crop(boundry)
+        output = image.crop(boundary)
 
         return output
 
-    def _getBoundryWidth(self, boundry):
-        return boundry[2] - boundry[0]
+    def _get_boundary_width(self, boundary):
+        return boundary[2] - boundary[0]
 
-    def _getBoundryHeight(self, boundry):
-        return boundry[3] - boundry[1]
+    def _get_boundary_height(self, boundary):
+        return boundary[3] - boundary[1]
 
     @property
     def time(self):
-        return self._time
+        return self._parsed_frame.time
 
     @property
     def setTemperature(self):
-        return self._setTemperature
+        return self._parsed_frame.set_temperature
 
     @property
     def waterTemperature(self):
-        return self._waterTemperature
+        return self._parsed_frame.water_temperature
 
     @property
     def mode(self):
-        return self._mode
+        return self._parsed_frame.mode
 
     @property
     def state(self):
-        return self._state
+        return self._parsed_frame.state
 
     @property
     def indicator(self):
-        return self._indicator
+        return self._parsed_frame.indicator
 
     @property
     def level(self):
-        return self._level
+        return self._parsed_frame.level
 
     def get_quality(self, key: str):
-        quality = self._quality.get(key, {"status": "unknown", "confidence": None, "frame": None})
-        return dict(quality)
+        return self._parsed_frame.get_quality_dict(key)
+
+    def get_alignment(self):
+        return self._parsed_frame.get_alignment_dict()
+
+    @property
+    def parsed_frame(self):
+        return self._parsed_frame
 
     @property
     def image(self):
@@ -709,14 +938,14 @@ class Oekoboiler:
 
             # Paste indicators
             for i, indicator in enumerate(["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]):
-                boundry = self._boundries[indicator]
+                boundry = self._active_boundaries.get(indicator, self._boundaries[indicator])
                 indicator_image = self._image.get(indicator)
                 if indicator_image is not None:
                     new_im.paste(indicator_image, (boundry[0], boundry[1]))
 
             # Paste Modes
             for i, mode in enumerate(["modeEcon","modeAuto","modeHeater"]):
-                boundry = self._boundries[mode]
+                boundry = self._active_boundaries.get(mode, self._boundaries[mode])
                 mode_image = self._image.get(mode)
                 if mode_image is not None:
                     new_im.paste(mode_image, (boundry[0], boundry[1]))
@@ -724,20 +953,20 @@ class Oekoboiler:
 
             # Paste Temps
             if "setTemp_segments" in self._image:
-                boundry = self._boundries["setTemp"]
+                boundry = self._active_boundaries.get("setTemp", self._boundaries["setTemp"])
                 new_im.paste(self._image["setTemp_segments"], (boundry[0], boundry[1]))
             if "waterTemp_segments" in self._image:
-                boundry = self._boundries["waterTemp"]
+                boundry = self._active_boundaries.get("waterTemp", self._boundaries["waterTemp"])
                 new_im.paste(self._image["waterTemp_segments"], (boundry[0], boundry[1]))
 
             # Paste time
             if "time_segments" in self._image:
-                boundry = self._boundries["time"]
+                boundry = self._active_boundaries.get("time", self._boundaries["time"])
                 new_im.paste(self._image["time_segments"], (boundry[0], boundry[1]))
 
             # Paste time
             if "level" in self._image:
-                boundry = self._boundries["level"]
+                boundry = self._active_boundaries.get("level", self._boundaries["level"])
                 new_im.paste(self._image["level"], (boundry[0], boundry[1]))
 
             
@@ -777,62 +1006,90 @@ if __name__ == "__main__":
 
     camera_entity = os.getenv("CAMERA_ENTITY", "camera.oekoboiler_camera")
 
-    url = "{}/api/camera_proxy_stream/{}".format(homeassistanturl, camera_entity)
-    r = requests.request("GET", url, headers=headers, stream=True)
+    scan_interval = int(os.getenv("LOCAL_TEST_INTERVAL", "30"))
+    max_iterations = int(os.getenv("LOCAL_TEST_MAX_ITERATIONS", "0"))
+    request_timeout = int(os.getenv("LOCAL_TEST_TIMEOUT", "10"))
+    url = "{}/api/camera_proxy/{}".format(homeassistanturl, camera_entity)
 
-    image = None
+    print(
+        "Local test loop started: interval={}s, max_iterations={} (0 means forever), entity={}".format(
+            scan_interval,
+            max_iterations,
+            camera_entity,
+        )
+    )
 
-    if(r.status_code == 200):
-        bytes=b''
+    iteration = 0
+    while True:
+        if max_iterations > 0 and iteration >= max_iterations:
+            break
 
-        for chunk in r.iter_content(chunk_size=1024):
-            bytes += chunk
-            finda = bytes.find(b'\xff\xd8')
-            findb = bytes.find(b'\xff\xd9')
+        iteration += 1
+        print("\n=== Iteration {} ===".format(iteration))
 
-            if finda != -1 and findb != -1:
-                jpg = bytes[finda:findb+2]
-                bytes = bytes[findb+2:]
+        try:
+            response = requests.get(url, headers=headers, timeout=request_timeout)
+        except requests.RequestException as err:
+            print("Failed to fetch camera image: {}".format(err))
+            time.sleep(scan_interval)
+            continue
 
-                image = Image.open(io.BytesIO(jpg))
-                
-                if image is not None:
-                    oekoboiler.processImage(image)
+        if response.status_code != 200:
+            print("Camera request failed: status={}".format(response.status_code))
+            time.sleep(scan_interval)
+            continue
 
-                    print("Time {}".format(oekoboiler.time))
-                    print("Mode {}".format(oekoboiler.mode))
-                    print("State {}".format(oekoboiler.state))
-                    print("Water Temp {}".format(oekoboiler.waterTemperature))
-                    print("Set Temp {}".format(oekoboiler.setTemperature))
+        try:
+            image = Image.open(io.BytesIO(response.content)).convert("RGB")
+        except Exception as err:
+            print("Failed to decode image: {}".format(err))
+            time.sleep(scan_interval)
+            continue
 
-                    print("High Temp {}".format(oekoboiler.indicator["highTemp"]))
+        oekoboiler.processImage(image)
 
-                    print("Level {}".format(oekoboiler.level))
+        print("Time {}".format(oekoboiler.time))
+        print("Mode {}".format(oekoboiler.mode))
+        print("State {}".format(oekoboiler.state))
+        print("Water Temp {}".format(oekoboiler.waterTemperature))
+        print("Set Temp {}".format(oekoboiler.setTemperature))
+        print("High Temp {}".format(oekoboiler.indicator["highTemp"]))
+        print("Level {}".format(oekoboiler.level))
 
-                    print("Quality:")
-                    for quality_key in [
-                        "time",
-                        "set_temperature",
-                        "water_temperature",
-                        "mode",
-                        "state",
-                        "level",
-                    ]:
-                        quality = oekoboiler.get_quality(quality_key)
-                        print(
-                            "  {} -> status={}, confidence={}, frame={}".format(
-                                quality_key,
-                                quality.get("status"),
-                                quality.get("confidence"),
-                                quality.get("frame"),
-                            )
-                        )
+        print("Quality:")
+        for quality_key in [
+            "time",
+            "set_temperature",
+            "water_temperature",
+            "mode",
+            "state",
+            "level",
+        ]:
+            quality = oekoboiler.get_quality(quality_key)
+            print(
+                "  {} -> status={}, confidence={}, frame={}".format(
+                    quality_key,
+                    quality.get("status"),
+                    quality.get("confidence"),
+                    quality.get("frame"),
+                )
+            )
 
-                    processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
+        alignment = oekoboiler.get_alignment()
+        print(
+            "Alignment -> raw_shift_x={}, raw_shift_y={}, shift_x={}, shift_y={}, error={}, frame={}".format(
+                alignment.get("raw_shift_x"),
+                alignment.get("raw_shift_y"),
+                alignment.get("shift_x"),
+                alignment.get("shift_y"),
+                alignment.get("error"),
+                alignment.get("frame"),
+            )
+        )
 
-                    #processedImage.show()
-                    processedImage.save("test.png")
+        processed_image_bytes = oekoboiler.imageByteArray
+        if processed_image_bytes is not None:
+            processed_image = Image.open(io.BytesIO(processed_image_bytes))
+            processed_image.save("test.png")
 
-
-
-                    break
+        time.sleep(scan_interval)
