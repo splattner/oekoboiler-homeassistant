@@ -135,72 +135,129 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
         """Initialize options flow."""
         self._config_entry = config_entry
 
+    @staticmethod
+    def _boundary_fields() -> tuple[str, ...]:
+        """Return all option keys that represent boundary coordinates."""
+        return (
+            CONF_BOUNDRY_TIME,
+            CONF_BOUNDRY_SETTEMP,
+            CONF_BOUNDRY_WATERTEMP,
+            CONF_BOUNDRY_MODE_ECON,
+            CONF_BOUNDRY_MODE_AUTO,
+            CONF_BOUNDRY_MODE_HEATER,
+            CONF_BOUNDRY_INDICATOR_WARM,
+            CONF_BOUNDRY_INDICATOR_HTG,
+            CONF_BOUNDRY_INDICATOR_DEF,
+            CONF_BOUNDRY_INDICATOR_OFF,
+            CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
+            CONF_BOUNDRY_LEVEL,
+        )
+
     async def async_step_init(self, user_input=None) -> FlowResult:
         """Manage the options."""
+        errors = {}
+
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            normalized_input = user_input.copy()
+            for field in self._boundary_fields():
+                try:
+                    normalized_input[field] = _validate_boundary_value(
+                        normalized_input[field]
+                    )
+                except vol.Invalid:
+                    errors[field] = "invalid_boundary"
+
+            if not errors:
+                return self.async_create_entry(title="", data=normalized_input)
+
+            user_input = normalized_input
+
+        boundary_defaults = {
+            CONF_BOUNDRY_TIME: DEFAULT_BOUNDRY_TIME,
+            CONF_BOUNDRY_SETTEMP: DEFAULT_BOUNDRY_SETTEMP,
+            CONF_BOUNDRY_WATERTEMP: DEFAULT_BOUNDRY_WATERTEMP,
+            CONF_BOUNDRY_MODE_ECON: DEFAULT_BOUNDRY_MODE_ECON,
+            CONF_BOUNDRY_MODE_AUTO: DEFAULT_BOUNDRY_MODE_AUTO,
+            CONF_BOUNDRY_MODE_HEATER: DEFAULT_BOUNDRY_MODE_HEATER,
+            CONF_BOUNDRY_INDICATOR_WARM: DEFAULT_BOUNDRY_INDICATOR_WARM,
+            CONF_BOUNDRY_INDICATOR_HTG: DEFAULT_BOUNDRY_INDICATOR_HTG,
+            CONF_BOUNDRY_INDICATOR_DEF: DEFAULT_BOUNDRY_INDICATOR_DEF,
+            CONF_BOUNDRY_INDICATOR_OFF: DEFAULT_BOUNDRY_INDICATOR_OFF,
+            CONF_BOUNDRY_INDICATOR_HIGH_TEMP: DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP,
+            CONF_BOUNDRY_LEVEL: DEFAULT_BOUNDRY_LEVEL,
+        }
+
+        def _default_value(key, fallback):
+            if user_input is not None:
+                return user_input.get(key)
+            if key in self._config_entry.options:
+                return self._config_entry.options.get(key)
+            if isinstance(fallback, (list, tuple)):
+                return ", ".join(str(v) for v in fallback)
+            return fallback
 
         options = {
             vol.Required(
                 CONF_BOUNDRY_TIME,
-                default=self._config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_TIME, boundary_defaults[CONF_BOUNDRY_TIME]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_SETTEMP,
-                default=self._config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_SETTEMP, boundary_defaults[CONF_BOUNDRY_SETTEMP]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_WATERTEMP,
-                default=self._config_entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_WATERTEMP, boundary_defaults[CONF_BOUNDRY_WATERTEMP]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_ECON,
-                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_MODE_ECON, boundary_defaults[CONF_BOUNDRY_MODE_ECON]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_AUTO,
-                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_MODE_AUTO, boundary_defaults[CONF_BOUNDRY_MODE_AUTO]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_MODE_HEATER,
-                default=self._config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_MODE_HEATER, boundary_defaults[CONF_BOUNDRY_MODE_HEATER]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_WARM,
-                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_INDICATOR_WARM, boundary_defaults[CONF_BOUNDRY_INDICATOR_WARM]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HTG,
-                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_INDICATOR_HTG, boundary_defaults[CONF_BOUNDRY_INDICATOR_HTG]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_DEF,
-                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_INDICATOR_DEF, boundary_defaults[CONF_BOUNDRY_INDICATOR_DEF]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_OFF,
-                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_INDICATOR_OFF, boundary_defaults[CONF_BOUNDRY_INDICATOR_OFF]),
+            ): cv.string,
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
-                default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, boundary_defaults[CONF_BOUNDRY_INDICATOR_HIGH_TEMP]),
+            ): cv.string,
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
-                default=int(self._config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, DEFAULT_THESHHOLD_ILLUMINATED)),
+                default=int(_default_value(CONF_THRESHHOLD_ILLUMINATION, DEFAULT_THESHHOLD_ILLUMINATED)),
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
             vol.Required(
                 CONF_THRESHHOLD_GRAY,
-                default=int(self._config_entry.options.get(CONF_THRESHHOLD_GRAY, DEFAULT_THESHHOLD_GRAY)),
+                default=int(_default_value(CONF_THRESHHOLD_GRAY, DEFAULT_THESHHOLD_GRAY)),
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Required(
                 CONF_BOUNDRY_LEVEL,
-                default=self._config_entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)),
-            ): vol.All(cv.string, _validate_boundary_value),
+                default=_default_value(CONF_BOUNDRY_LEVEL, boundary_defaults[CONF_BOUNDRY_LEVEL]),
+            ): cv.string,
         }
         
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(options)
+            data_schema=vol.Schema(options),
+            errors=errors,
         )

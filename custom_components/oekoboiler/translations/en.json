@@ -31,6 +31,9 @@
                     "threshhold_gray": "Gray threshold (0-255)"
                 }
             }
+        },
+        "error": {
+            "invalid_boundary": "Use exactly four integers separated by commas (x1, y1, x2, y2)."
         }
     }
 }
