@@ -13,10 +13,11 @@ CONF_BOUNDRY_INDICATOR_DEF: str = "boundry_indicator_def"
 CONF_BOUNDRY_INDICATOR_OFF: str = "boundry_indicator_off"
 CONF_BOUNDRY_INDICATOR_HIGH_TEMP: str = "boundry_indicator_high_temp"
 CONF_BOUNDRY_LEVEL: str = "boundry_level"
-CONF_THRESHHOLD_ILLUMINATION: int = "threshhold_illumination"
-CONF_THRESHHOLD_GRAY: int = "threshhold_gray"
+CONF_THRESHHOLD_ILLUMINATION: str = "threshhold_illumination"
+CONF_THRESHHOLD_GRAY: str = "threshhold_gray"
 
 DATA_OEKOBOILER_CLIENT = "oekoboiler_client"
+DATA_COORDINATOR = "coordinator"
 
 DEFAULT_TIMEOUT = 10
 

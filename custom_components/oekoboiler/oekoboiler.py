@@ -502,7 +502,7 @@ class Oekoboiler:
     def image(self):
         _LOGGER.debug("Request Processes Image")
 
-        return self._image["processed_image"]
+        return self._image.get("processed_image")
 
     @property
     def imageByteArray(self):
@@ -517,12 +517,16 @@ class Oekoboiler:
             # Paste indicators
             for i, indicator in enumerate(["indicatorOff", "indicatorHtg","indicatorDef","indicatorWarm"]):
                 boundry = self._boundries[indicator]
-                new_im.paste(self._image[indicator], (boundry[0], boundry[1]))
+                indicator_image = self._image.get(indicator)
+                if indicator_image is not None:
+                    new_im.paste(indicator_image, (boundry[0], boundry[1]))
 
             # Paste Modes
             for i, mode in enumerate(["modeEcon","modeAuto","modeHeater"]):
                 boundry = self._boundries[mode]
-                new_im.paste(self._image[mode], (boundry[0], boundry[1]))
+                mode_image = self._image.get(mode)
+                if mode_image is not None:
+                    new_im.paste(mode_image, (boundry[0], boundry[1]))
 
 
             # Paste Temps

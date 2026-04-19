@@ -1,247 +1,133 @@
 import logging
-import io
-from typing import Callable, Union
+from typing import Callable
 
-from PIL import Image
-
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.const import (
-    PERCENTAGE,
-    UnitOfTemperature,
-)
-
-from homeassistant.components.image_processing import (
-    CONF_CONFIDENCE,
-    PLATFORM_SCHEMA,
-    ImageProcessingEntity,
-)
-
+from homeassistant.const import PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator
 
-from homeassistant.components.camera import async_get_image
-
-from .const import (
-    DOMAIN,
-    DATA_OEKOBOILER_CLIENT,
-    CONF_CAMERA_ENTITY_ID,
-)
-
-from. import OekoboilerEntity
-
+from . import OekoboilerEntity
+from .const import DATA_COORDINATOR, DATA_OEKOBOILER_CLIENT, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, 
-    entry: ConfigEntry, 
-    async_add_entities: Callable
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: Callable,
 ) -> None:
-
-    pass
-
-    entities: list[OekoboilerEntity] = []
-
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
+    coordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
 
-    # Mode Sensor
-    entities.append(OekoboilerModeSensorEntiry(
-                hass=hass,
-                oekoboiler=oekoboiler,
-                entry=entry,
-                name="Mode",
-            )
-    )
+    entities: list[OekoboilerCoordinatorSensorEntity] = [
+        OekoboilerModeSensorEntity(
+            hass=hass,
+            oekoboiler=oekoboiler,
+            coordinator=coordinator,
+            entry=entry,
+            name="Mode",
+        ),
+        OekoboilerStateSensorEntity(
+            hass=hass,
+            oekoboiler=oekoboiler,
+            coordinator=coordinator,
+            entry=entry,
+            name="State",
+        ),
+        OekoboilerWaterTempSensorEntity(
+            hass=hass,
+            oekoboiler=oekoboiler,
+            coordinator=coordinator,
+            entry=entry,
+            name="Water Temperature",
+        ),
+        OekoboilerSetTempSensorEntity(
+            hass=hass,
+            oekoboiler=oekoboiler,
+            coordinator=coordinator,
+            entry=entry,
+            name="Set Temperature",
+        ),
+        OekoboilerLevelSensorEntity(
+            hass=hass,
+            oekoboiler=oekoboiler,
+            coordinator=coordinator,
+            entry=entry,
+            name="Level",
+        ),
+    ]
 
-    # State Sensor
-    entities.append(OekoboilerStateSensorEntiry(
-                hass=hass,
-                oekoboiler=oekoboiler,
-                entry=entry,
-                name="State",
-            )
-    )
-
-    # Water Temp Sensor
-    entities.append(OekoboilerWaterTempSensorEntiry(
-                hass=hass,
-                oekoboiler=oekoboiler,
-                entry=entry,
-                name="Water Temperature"
-            )
-    )
-
-    # Set Temp Sensor
-    entities.append(OekoboilerSetTempSensorEntiry(
-                hass=hass,
-                oekoboiler=oekoboiler,
-                entry=entry,
-                name="Set Temperature"
-                
-            )
-    )
-
-    # Level Sensor
-    entities.append(OekoboilerLevelSensorEntiry(
-                hass=hass,
-                oekoboiler=oekoboiler,
-                entry=entry,
-                name="Level"
-                
-            )
-    )
-
-    async_add_entities(entities, True)
+    async_add_entities(entities)
 
 
-
-class OekoboilerModeSensorEntiry(OekoboilerEntity, SensorEntity):
+class OekoboilerCoordinatorSensorEntity(
+    CoordinatorEntity[DataUpdateCoordinator], OekoboilerEntity, SensorEntity
+):
     def __init__(
         self,
         hass: HomeAssistant,
         oekoboiler,
-        name,
-        entry,
+        coordinator: DataUpdateCoordinator,
+        name: str,
+        entry: ConfigEntry,
         *args,
         **kwargs,
     ):
+        CoordinatorEntity.__init__(self, coordinator)
+        OekoboilerEntity.__init__(
+            self,
+            hass=hass,
+            oekoboiler=oekoboiler,
+            entry=entry,
+            coordinator=coordinator,
+            name=name,
+            *args,
+            **kwargs,
+        )
 
-        self._state: int = None
-        self._camera_entity = entry.data[CONF_CAMERA_ENTITY_ID]
 
-        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
-
-
+class OekoboilerModeSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def name(self) -> str:
-        return f"Oekoboiler Mode"
+        return "Oekoboiler Mode"
 
     @property
     def unique_id(self) -> str:
-        return f"oekoboiler_mode"
+        return f"{DOMAIN}_{self._entry.entry_id}_mode"
 
     @property
-    def available(self) -> bool:
-        return True
-
-    @property
-    def state(self) -> int:
-        return self._state
+    def native_value(self) -> str | None:
+        return self._oekoboiler.mode
 
 
-
-    @property
-    def device_info(self) -> dict:
-        """Return information about the device."""
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Oekoboiler",
-            "model": "OekoBoiler",
-            "manufacturer": "Oekoswiss Supply AG",
-        }
-
-    async def async_update(self, **kwargs) -> None:
-
-        cameraImage = None
-
-        try:
-            cameraImage = await async_get_image(
-                self._hass, self._camera_entity, timeout=self._timeout
-            )
-        except HomeAssistantError as err:
-            _LOGGER.error("Error on receive image from entity: %s", err)
-            return
-
-
-        oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
-        w, h = oekoboilerDisplayImage.size
-
-        _LOGGER.debug("Image captured from camera for processing in Oekoboiler Component. Image Size: w={}, h={}".format(w,h))
-
-        self._oekoboiler.processImage(oekoboilerDisplayImage)
-        
-        self._state = self._oekoboiler.mode
-
-class OekoboilerStateSensorEntiry(OekoboilerEntity, SensorEntity):
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        oekoboiler,
-        name,
-        entry,
-        *args,
-        **kwargs,
-    ):
-
-        self._state: int = None
-
-        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
-
-
+class OekoboilerStateSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def name(self) -> str:
-        return f"Oekoboiler State"
+        return "Oekoboiler State"
 
     @property
     def unique_id(self) -> str:
-        return f"oekoboiler_state"
+        return f"{DOMAIN}_{self._entry.entry_id}_state"
 
     @property
-    def available(self) -> bool:
-        return True
-
-    @property
-    def state(self) -> int:
-        return self._state
+    def native_value(self) -> str | None:
+        return self._oekoboiler.state
 
 
-
-    @property
-    def device_info(self) -> dict:
-        """Return information about the device."""
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Oekoboiler",
-            "model": "OekoBoiler",
-            "manufacturer": "Oekoswiss Supply AG",
-        }
-
-    async def async_update(self, **kwargs) -> None:
-
-        self._state = self._oekoboiler.state
-
-class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        oekoboiler,
-        name,
-        entry,
-        *args,
-        **kwargs,
-    ):
-
-        self._state: int = None
-        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
-
-
+class OekoboilerWaterTempSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def name(self) -> str:
-        return f"Oekoboiler Water Temperature"
+        return "Oekoboiler Water Temperature"
 
     @property
     def unique_id(self) -> str:
-        return f"oekoboiler_water_temp"
+        return f"{DOMAIN}_{self._entry.entry_id}_water_temp"
 
     @property
-    def available(self) -> bool:
-        return True
-
-    @property
-    def state(self) -> int:
-        return self._state
+    def native_value(self) -> int | None:
+        return self._oekoboiler.waterTemperature
 
     @property
     def device_class(self):
@@ -249,135 +135,56 @@ class OekoboilerWaterTempSensorEntiry(OekoboilerEntity, SensorEntity):
 
     @property
     def state_class(self):
-        return "measurement"
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit the value is expressed in."""
-        return UnitOfTemperature.CELSIUS
-
-
-    @property
-    def device_info(self) -> dict:
-        """Return information about the device."""
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Oekoboiler",
-            "model": "OekoBoiler",
-            "manufacturer": "Oekoswiss Supply AG",
-        }
-
-    async def async_update(self, **kwargs) -> None:
-        self._state = self._oekoboiler.waterTemperature
-
-class OekoboilerSetTempSensorEntiry(OekoboilerEntity, SensorEntity):
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        oekoboiler,
-        name,
-        entry,
-        *args,
-        **kwargs,
-    ):
-
-        self._state: int = None
-        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
-
-
-    @property
-    def name(self) -> str:
-        return f"Oekoboiler Set Temperature"
-
-    @property
-    def unique_id(self) -> str:
-        return f"oekoboiler_set_temp"
-
-    @property
-    def available(self) -> bool:
-        return True
-
-    @property
-    def state(self) -> int:
-        return self._state
-
-    @property
-    def device_class(self):
-        return SensorDeviceClass.TEMPERATURE
-
-    @property
-    def state_class(self):
-        return "measurement"
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit the value is expressed in."""
-        return UnitOfTemperature.CELSIUS
-
-    @property
-    def device_info(self) -> dict:
-        """Return information about the device."""
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Oekoboiler",
-            "model": "OekoBoiler",
-            "manufacturer": "Oekoswiss Supply AG",
-        }
-
-    async def async_update(self, **kwargs) -> None:
-        self._state = self._oekoboiler.setTemperature
-
-class OekoboilerLevelSensorEntiry(OekoboilerEntity, SensorEntity):
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        oekoboiler,
-        name,
-        entry,
-        *args,
-        **kwargs,
-    ):
-
-        self._state: int = None
-        super().__init__(hass=hass, oekoboiler=oekoboiler, name=name, entry=entry, *args, **kwargs)
-
-
-    @property
-    def name(self) -> str:
-        return f"Oekoboiler Level"
-
-    @property
-    def unique_id(self) -> str:
-        return f"oekoboiler_level"
-
-    @property
-    def available(self) -> bool:
-        return True
-
-    @property
-    def state(self) -> int:
-        return self._state
-
-
-
-    @property
-    def state_class(self):
-        return "measurement"
+        return SensorStateClass.MEASUREMENT
 
     @property
     def native_unit_of_measurement(self):
-        """Return the unit the value is expressed in."""
-        return PERCENTAGE
+        return UnitOfTemperature.CELSIUS
+
+
+class OekoboilerSetTempSensorEntity(OekoboilerCoordinatorSensorEntity):
+    @property
+    def name(self) -> str:
+        return "Oekoboiler Set Temperature"
 
     @property
-    def device_info(self) -> dict:
-        """Return information about the device."""
-        return {
-            "identifiers": {(DOMAIN, self._entry.entry_id)},
-            "name": "Oekoboiler",
-            "model": "OekoBoiler",
-            "manufacturer": "Oekoswiss Supply AG",
-        }
+    def unique_id(self) -> str:
+        return f"{DOMAIN}_{self._entry.entry_id}_set_temp"
 
-    async def async_update(self, **kwargs) -> None:
-        self._state = self._oekoboiler.level
+    @property
+    def native_value(self) -> int | None:
+        return self._oekoboiler.setTemperature
+
+    @property
+    def device_class(self):
+        return SensorDeviceClass.TEMPERATURE
+
+    @property
+    def state_class(self):
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def native_unit_of_measurement(self):
+        return UnitOfTemperature.CELSIUS
+
+
+class OekoboilerLevelSensorEntity(OekoboilerCoordinatorSensorEntity):
+    @property
+    def name(self) -> str:
+        return "Oekoboiler Level"
+
+    @property
+    def unique_id(self) -> str:
+        return f"{DOMAIN}_{self._entry.entry_id}_level"
+
+    @property
+    def native_value(self) -> int | None:
+        return self._oekoboiler.level
+
+    @property
+    def state_class(self):
+        return SensorStateClass.MEASUREMENT
+
+    @property
+    def native_unit_of_measurement(self):
+        return PERCENTAGE

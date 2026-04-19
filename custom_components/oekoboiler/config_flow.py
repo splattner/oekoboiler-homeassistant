@@ -1,4 +1,5 @@
 import voluptuous as vol
+from typing import Any
 
 from homeassistant.core import callback
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
@@ -109,6 +110,26 @@ class OekoBoilerConfigFlow(ConfigFlow, domain=DOMAIN):
         return OekoBoilerOptionsFlowHandler(config_entry)
 
 
+def _validate_boundary_value(value: Any) -> str:
+    """Validate a boundary value and normalize it to 'x1, y1, x2, y2'."""
+    if isinstance(value, str):
+        parts = [part.strip() for part in value.split(",") if part.strip()]
+    elif isinstance(value, (list, tuple)):
+        parts = [str(int(part)) for part in value]
+    else:
+        raise vol.Invalid("Boundary must be a comma-separated list of 4 integers")
+
+    if len(parts) != 4:
+        raise vol.Invalid("Boundary must contain exactly 4 integer values")
+
+    try:
+        normalized = [str(int(part)) for part in parts]
+    except (TypeError, ValueError) as err:
+        raise vol.Invalid("Boundary must contain integer values") from err
+
+    return ", ".join(normalized)
+
+
 class OekoBoilerOptionsFlowHandler(OptionsFlow):
     def __init__(self, config_entry: ConfigEntry):
         """Initialize options flow."""
@@ -123,59 +144,59 @@ class OekoBoilerOptionsFlowHandler(OptionsFlow):
             vol.Required(
                 CONF_BOUNDRY_TIME,
                 default=self._config_entry.options.get(CONF_BOUNDRY_TIME, ", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_SETTEMP,
                 default=self._config_entry.options.get(CONF_BOUNDRY_SETTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_WATERTEMP,
                 default=self._config_entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_MODE_ECON,
                 default=self._config_entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_MODE_AUTO,
                 default=self._config_entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_MODE_HEATER,
                 default=self._config_entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_WARM,
                 default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HTG,
                 default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_DEF,
                 default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_OFF,
                 default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_BOUNDRY_INDICATOR_HIGH_TEMP,
                 default=self._config_entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
             vol.Required(
                 CONF_THRESHHOLD_ILLUMINATION,
-                default=self._config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED)),
-            ): cv.string,
+                default=int(self._config_entry.options.get(CONF_THRESHHOLD_ILLUMINATION, DEFAULT_THESHHOLD_ILLUMINATED)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
             vol.Required(
                 CONF_THRESHHOLD_GRAY,
-                default=self._config_entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY)),
-            ): cv.string,
+                default=int(self._config_entry.options.get(CONF_THRESHHOLD_GRAY, DEFAULT_THESHHOLD_GRAY)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Required(
                 CONF_BOUNDRY_LEVEL,
                 default=self._config_entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)),
-            ): cv.string,
+            ): vol.All(cv.string, _validate_boundary_value),
         }
         
 

@@ -1,24 +1,23 @@
 """Provides functionality to interact with an Oekoboiler"""
 import io
-
 import logging
-from typing import final
-
-import voluptuous as vol
+from datetime import timedelta
+from typing import Any
 
 from PIL import Image
 
-from homeassistant.const import (
-
-    CONF_ENTITY_ID,
-    CONF_NAME,
-    CONF_SOURCE,
-    Platform,
-)
+from homeassistant.const import Platform
+from homeassistant.components.camera import Camera
+from homeassistant.components.camera import async_get_image
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
     DOMAIN,
     DATA_OEKOBOILER_CLIENT,
+    DATA_COORDINATOR,
     DEFAULT_TIMEOUT,
     CONF_CAMERA_ENTITY_ID,
     CONF_BOUNDRY_TIME,
@@ -40,7 +39,6 @@ from .const import (
 
 from .oekoboiler import (
     Oekoboiler,
-    DEFAULT_BOUNDRY_INDICATOR_HTG,
     DEFAULT_BOUNDRY_TIME,
     DEFAULT_BOUNDRY_SETTEMP,
     DEFAULT_BOUNDRY_WATERTEMP,
@@ -56,20 +54,80 @@ from .oekoboiler import (
     DEFAULT_THESHHOLD_GRAY,
     DEFAULT_BOUNDRY_LEVEL
 )
-
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
-import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.entity import Entity
-from homeassistant.core import HomeAssistant
-
-from homeassistant.components.camera import Camera
-
 from homeassistant.exceptions import HomeAssistantError
 
 PLATFORMS = [Platform.SENSOR, Platform.CAMERA]
+SCAN_INTERVAL = timedelta(seconds=30)
 
 _LOGGER = logging.getLogger(__name__)
+
+_BOUNDARY_OPTION_MAP: dict[str, tuple[str, tuple[int, int, int, int]]] = {
+    CONF_BOUNDRY_TIME: ("time", DEFAULT_BOUNDRY_TIME),
+    CONF_BOUNDRY_SETTEMP: ("setTemp", DEFAULT_BOUNDRY_SETTEMP),
+    CONF_BOUNDRY_WATERTEMP: ("waterTemp", DEFAULT_BOUNDRY_WATERTEMP),
+    CONF_BOUNDRY_MODE_AUTO: ("modeAuto", DEFAULT_BOUNDRY_MODE_AUTO),
+    CONF_BOUNDRY_MODE_ECON: ("modeEcon", DEFAULT_BOUNDRY_MODE_ECON),
+    CONF_BOUNDRY_MODE_HEATER: ("modeHeater", DEFAULT_BOUNDRY_MODE_HEATER),
+    CONF_BOUNDRY_INDICATOR_WARM: ("indicatorWarm", DEFAULT_BOUNDRY_INDICATOR_WARM),
+    CONF_BOUNDRY_INDICATOR_OFF: ("indicatorOff", DEFAULT_BOUNDRY_INDICATOR_OFF),
+    CONF_BOUNDRY_INDICATOR_HTG: ("indicatorHtg", DEFAULT_BOUNDRY_INDICATOR_HTG),
+    CONF_BOUNDRY_INDICATOR_DEF: ("indicatorDef", DEFAULT_BOUNDRY_INDICATOR_DEF),
+    CONF_BOUNDRY_INDICATOR_HIGH_TEMP: ("indicatorHighTemp", DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP),
+    CONF_BOUNDRY_LEVEL: ("level", DEFAULT_BOUNDRY_LEVEL),
+}
+
+
+def _build_device_info(entry_id: str) -> dict[str, Any]:
+    """Return shared device info metadata for all Oekoboiler entities."""
+    return {
+        "identifiers": {(DOMAIN, entry_id)},
+        "name": "Oekoboiler",
+        "model": "OekoBoiler",
+        "manufacturer": "Oekoswiss Supply AG",
+    }
+
+
+def _parse_boundary_value(raw_value: Any, default: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    """Parse boundary options from list/tuple/string to a 4-int tuple."""
+    if isinstance(raw_value, (list, tuple)):
+        parts = [int(value) for value in raw_value]
+    elif isinstance(raw_value, str):
+        parts = [int(value.strip()) for value in raw_value.split(",") if value.strip()]
+    else:
+        parts = list(default)
+
+    if len(parts) != 4:
+        _LOGGER.warning("Invalid boundary option value '%s', using default %s", raw_value, default)
+        return default
+
+    return tuple(parts)
+
+
+def _parse_int_option(raw_value: Any, default: int) -> int:
+    """Parse integer options and fallback to default for invalid values."""
+    try:
+        return int(raw_value)
+    except (TypeError, ValueError):
+        _LOGGER.warning("Invalid numeric option value '%s', using default %s", raw_value, default)
+        return default
+
+
+def _get_runtime_config(entry: ConfigEntry) -> tuple[dict[str, tuple[int, int, int, int]], int, int]:
+    """Build parser runtime config from entry options with safe fallbacks."""
+    boundaries: dict[str, tuple[int, int, int, int]] = {}
+    for option_key, (runtime_key, default) in _BOUNDARY_OPTION_MAP.items():
+        boundaries[runtime_key] = _parse_boundary_value(entry.options.get(option_key, default), default)
+
+    threshold_illumination = _parse_int_option(
+        entry.options.get(CONF_THRESHHOLD_ILLUMINATION, DEFAULT_THESHHOLD_ILLUMINATED),
+        DEFAULT_THESHHOLD_ILLUMINATED,
+    )
+    threshold_gray = _parse_int_option(
+        entry.options.get(CONF_THRESHHOLD_GRAY, DEFAULT_THESHHOLD_GRAY),
+        DEFAULT_THESHHOLD_GRAY,
+    )
+
+    return boundaries, threshold_illumination, threshold_gray
 
 
 async def async_setup(hass, config):
@@ -85,32 +143,40 @@ async def async_setup_entry(hass, entry) -> bool:
     oekoboiler = Oekoboiler()
 
     _LOGGER.debug("Load boundies from options")
+    boundries, theshhold_illumination, theshhold_gray = _get_runtime_config(entry)
 
-
-    boundries = {
-            "time": tuple(map(int, entry.options.get(CONF_BOUNDRY_TIME,", ".join(str(v) for v in DEFAULT_BOUNDRY_TIME)).split(', '))),
-            "setTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_SETTEMP,", ".join(str(v) for v in DEFAULT_BOUNDRY_SETTEMP)).split(', '))),
-            "waterTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_WATERTEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_WATERTEMP)).split(', '))),
-            "modeAuto": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_AUTO, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_AUTO)).split(', '))),
-            "modeEcon": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_ECON, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_ECON)).split(', '))),
-            "modeHeater": tuple(map(int, entry.options.get(CONF_BOUNDRY_MODE_HEATER, ", ".join(str(v) for v in DEFAULT_BOUNDRY_MODE_HEATER)).split(', '))),
-            "indicatorWarm": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_WARM, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_WARM)).split(', '))),
-            "indicatorOff": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_OFF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_OFF)).split(', '))),
-            "indicatorHtg": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_HTG, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HTG)).split(', '))),
-            "indicatorDef": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_DEF, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_DEF)).split(', '))),
-            "indicatorHighTemp": tuple(map(int, entry.options.get(CONF_BOUNDRY_INDICATOR_HIGH_TEMP, ", ".join(str(v) for v in DEFAULT_BOUNDRY_INDICATOR_HIGH_TEMP)).split(', '))),
-            "level": tuple(map(int, entry.options.get(CONF_BOUNDRY_LEVEL, ", ".join(str(v) for v in DEFAULT_BOUNDRY_LEVEL)).split(', '))),
-    }
-    theshhold_illumination = entry.options.get(CONF_THRESHHOLD_ILLUMINATION, str(DEFAULT_THESHHOLD_ILLUMINATED))
-    theshhold_gray = entry.options.get(CONF_THRESHHOLD_GRAY, str(DEFAULT_THESHHOLD_GRAY))
-
-    
     oekoboiler.setBoundries(boundries)
-    oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
-    oekoboiler.setThreshholdGray(int(theshhold_gray))
+    oekoboiler.setThreshholdIllumination(theshhold_illumination)
+    oekoboiler.setThreshholdGray(theshhold_gray)
 
+    async def _async_update_data() -> Oekoboiler:
+        try:
+            camera_image = await async_get_image(
+                hass,
+                entry.data[CONF_CAMERA_ENTITY_ID],
+                timeout=DEFAULT_TIMEOUT,
+            )
+        except HomeAssistantError as err:
+            raise UpdateFailed(f"Error receiving image from camera entity: {err}") from err
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {DATA_OEKOBOILER_CLIENT: oekoboiler}
+        display_image = Image.open(io.BytesIO(bytearray(camera_image.content))).convert("RGB")
+        await hass.async_add_executor_job(oekoboiler.processImage, display_image)
+        return oekoboiler
+
+    coordinator = DataUpdateCoordinator(
+        hass,
+        _LOGGER,
+        name=f"{DOMAIN}_{entry.entry_id}",
+        update_method=_async_update_data,
+        update_interval=SCAN_INTERVAL,
+    )
+
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
+        DATA_OEKOBOILER_CLIENT: oekoboiler,
+        DATA_COORDINATOR: coordinator,
+    }
+
+    await coordinator.async_refresh()
 
     update_listener = entry.add_update_listener(async_update_options)
     hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER] = update_listener
@@ -120,14 +186,17 @@ async def async_setup_entry(hass, entry) -> bool:
 
     return True
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("oekoboiler unload entry started")
 
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     
     if unload_ok:
-            hass.data[DOMAIN].pop(entry.entry_id)
+        update_listener = hass.data[DOMAIN][entry.entry_id].get(UPDATE_LISTENER)
+        if update_listener is not None:
+            update_listener()
+        hass.data[DOMAIN].pop(entry.entry_id)
 
 
     return unload_ok
@@ -137,47 +206,13 @@ async def async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     _LOGGER.debug("Updated options")
 
-    boundries = {
-        "time": tuple(map(int, entry.options[CONF_BOUNDRY_TIME].split(', '))),
-        "setTemp": tuple(map(int, entry.options[CONF_BOUNDRY_SETTEMP].split(', '))),
-        "waterTemp": tuple(map(int, entry.options[CONF_BOUNDRY_WATERTEMP].split(', '))),
-        "modeAuto": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_AUTO].split(', '))),
-        "modeEcon": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_ECON].split(', '))),
-        "modeHeater": tuple(map(int, entry.options[CONF_BOUNDRY_MODE_HEATER].split(', '))),
-        "indicatorWarm": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_WARM].split(', '))),
-        "indicatorOff": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_OFF].split(', '))),
-        "indicatorHtg": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_HTG].split(', '))),
-        "indicatorDef": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_DEF].split(', '))),
-        "indicatorHighTemp": tuple(map(int, entry.options[CONF_BOUNDRY_INDICATOR_HIGH_TEMP].split(', '))),
-        "level": tuple(map(int, entry.options[CONF_BOUNDRY_LEVEL].split(', '))),
-    }
-
-    theshhold_illumination = entry.options[CONF_THRESHHOLD_ILLUMINATION]
-    theshhold_gray = entry.options[CONF_THRESHHOLD_GRAY]
+    boundries, theshhold_illumination, theshhold_gray = _get_runtime_config(entry)
     oekoboiler = hass.data[DOMAIN][entry.entry_id][DATA_OEKOBOILER_CLIENT]
     oekoboiler.setBoundries(boundries)
-    oekoboiler.setThreshholdIllumination(int(theshhold_illumination))
-    oekoboiler.setThreshholGray(int(theshhold_gray))
-
-    camera = hass.components.camera
-    cameraImage = None
-
-    try:
-        cameraImage = await camera.async_get_image(
-            entry.data[CONF_CAMERA_ENTITY_ID], timeout=DEFAULT_TIMEOUT
-        )
-
-
-    except HomeAssistantError as err:
-        _LOGGER.error("Error on receive image from entity: %s", err)
-        return
-
-
-    oekoboilerDisplayImage = Image.open(io.BytesIO(bytearray(cameraImage.content))).convert("RGB")
-    w, h = oekoboilerDisplayImage.size
-
-
-    oekoboiler.updatedProcessedImage(oekoboilerDisplayImage)
+    oekoboiler.setThreshholdIllumination(theshhold_illumination)
+    oekoboiler.setThreshholdGray(theshhold_gray)
+    coordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
+    await coordinator.async_request_refresh()
 
 
 
@@ -189,6 +224,7 @@ class OekoboilerEntity(Entity):
         hass: HomeAssistant,
         oekoboiler: Oekoboiler,
         entry: ConfigEntry,
+        coordinator: DataUpdateCoordinator | None = None,
         name: str = "",
         enabled_default: bool = True
     ):
@@ -196,6 +232,7 @@ class OekoboilerEntity(Entity):
         self._oekoboiler = oekoboiler
         self._name = name
         self._entry = entry
+        self._coordinator = coordinator
         self._enabled_default = enabled_default
         self._available = True
 
@@ -214,7 +251,29 @@ class OekoboilerEntity(Entity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
+        if self._coordinator is not None:
+            return self._coordinator.last_update_success
         return self._available
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return information about the oekoboiler device."""
+        return _build_device_info(self._entry.entry_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose minimal coordinator diagnostic information."""
+        if self._coordinator is None:
+            return None
+
+        attributes: dict[str, Any] = {
+            "coordinator_last_update_success": self._coordinator.last_update_success,
+        }
+        last_success = getattr(self._coordinator, "last_update_success_time", None)
+        if last_success is not None:
+            attributes["coordinator_last_update_success_time"] = last_success.isoformat()
+
+        return attributes
 
 class OekoboilerCamera(Camera):
 
@@ -222,10 +281,39 @@ class OekoboilerCamera(Camera):
         self,
         hass: HomeAssistant,
         oekoboiler: Oekoboiler,
+        coordinator: DataUpdateCoordinator | None,
         entry: ConfigEntry,
     ):
         self._hass = hass
         self._oekoboiler = oekoboiler
+        self._coordinator = coordinator
         self._entry = entry
 
         super().__init__()
+
+    @property
+    def available(self) -> bool:
+        """Return camera availability based on coordinator state."""
+        if self._coordinator is None:
+            return True
+        return self._coordinator.last_update_success
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return information about the oekoboiler device."""
+        return _build_device_info(self._entry.entry_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Expose minimal coordinator diagnostic information."""
+        if self._coordinator is None:
+            return None
+
+        attributes: dict[str, Any] = {
+            "coordinator_last_update_success": self._coordinator.last_update_success,
+        }
+        last_success = getattr(self._coordinator, "last_update_success_time", None)
+        if last_success is not None:
+            attributes["coordinator_last_update_success_time"] = last_success.isoformat()
+
+        return attributes

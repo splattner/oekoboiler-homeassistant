@@ -15,21 +15,20 @@
             "init": {
                 "title": "Oekoboiler Configuration Options",
                 "data": {
-                    "autodetect_boundries": "Autodetection of BoundryBoxes",
-                    "boundry_time": "Boundry Box for Time Display",
-                    "boundry_settemp": "Boundry Box for Set Temperature",
-                    "boundry_watertemp": "Boundry Box for Water Temperature",
-                    "boundry_mode_econ": "Boundry Box for Econ Mode",
-                    "boundry_mode_auto": "Boundry Box for Auto Mode",
-                    "boundry_mode_heater": "Boundry Box for Heater Mode",
-                    "boundry_indicator_warm": "Boundry Box for Warm Indicator",
-                    "boundry_indicator_def": "Boundry Box for Def Indicator",
-                    "boundry_indicator_htg": "Boundry Box for HTG Indicator",
-                    "boundry_indicator_off": "Boundry Box for Off Indicator",
-                    "boundry_indicator_high_temp": "Boundry Box for Hight Temp Indicator",
-                    "boundry_level": "Boundry Box for Level Indicator",
-                    "threshhold_illumination": "Threshhold for the illumination",
-                    "threshhold_gray": "Threshhold for the gray"
+                    "boundry_time": "Boundary box: time display (x1, y1, x2, y2)",
+                    "boundry_settemp": "Boundary box: set temperature (x1, y1, x2, y2)",
+                    "boundry_watertemp": "Boundary box: water temperature (x1, y1, x2, y2)",
+                    "boundry_mode_econ": "Boundary box: econ mode (x1, y1, x2, y2)",
+                    "boundry_mode_auto": "Boundary box: auto mode (x1, y1, x2, y2)",
+                    "boundry_mode_heater": "Boundary box: heater mode (x1, y1, x2, y2)",
+                    "boundry_indicator_warm": "Boundary box: warm indicator (x1, y1, x2, y2)",
+                    "boundry_indicator_def": "Boundary box: defrost indicator (x1, y1, x2, y2)",
+                    "boundry_indicator_htg": "Boundary box: heating indicator (x1, y1, x2, y2)",
+                    "boundry_indicator_off": "Boundary box: off indicator (x1, y1, x2, y2)",
+                    "boundry_indicator_high_temp": "Boundary box: high temperature indicator (x1, y1, x2, y2)",
+                    "boundry_level": "Boundary box: level indicator (x1, y1, x2, y2)",
+                    "threshhold_illumination": "Illumination threshold (1-100)",
+                    "threshhold_gray": "Gray threshold (0-255)"
                 }
             }
         }
