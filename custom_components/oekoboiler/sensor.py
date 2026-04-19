@@ -87,6 +87,14 @@ class OekoboilerCoordinatorSensorEntity(
             **kwargs,
         )
 
+    def _quality_attributes(self, key: str) -> dict[str, str | float | int | None]:
+        quality = self._oekoboiler.get_quality(key)
+        return {
+            "quality_status": quality.get("status"),
+            "recognition_confidence": quality.get("confidence"),
+            "quality_frame": quality.get("frame"),
+        }
+
 
 class OekoboilerModeSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
@@ -100,6 +108,10 @@ class OekoboilerModeSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def native_value(self) -> str | None:
         return self._oekoboiler.mode
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
+        return self._quality_attributes("mode")
 
 
 class OekoboilerStateSensorEntity(OekoboilerCoordinatorSensorEntity):
@@ -115,6 +127,10 @@ class OekoboilerStateSensorEntity(OekoboilerCoordinatorSensorEntity):
     def native_value(self) -> str | None:
         return self._oekoboiler.state
 
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
+        return self._quality_attributes("state")
+
 
 class OekoboilerWaterTempSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
@@ -128,6 +144,10 @@ class OekoboilerWaterTempSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._oekoboiler.waterTemperature
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
+        return self._quality_attributes("water_temperature")
 
     @property
     def device_class(self):
@@ -156,6 +176,10 @@ class OekoboilerSetTempSensorEntity(OekoboilerCoordinatorSensorEntity):
         return self._oekoboiler.setTemperature
 
     @property
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
+        return self._quality_attributes("set_temperature")
+
+    @property
     def device_class(self):
         return SensorDeviceClass.TEMPERATURE
 
@@ -180,6 +204,10 @@ class OekoboilerLevelSensorEntity(OekoboilerCoordinatorSensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._oekoboiler.level
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | float | int | None]:
+        return self._quality_attributes("level")
 
     @property
     def state_class(self):

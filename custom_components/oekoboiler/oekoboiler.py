@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-from PIL import Image, ImageDraw, ImageOps, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageOps
 
 import logging
 import io
 import os
 import requests
+from typing import Optional
 
 
 BLUE_START_THRESHOLD = 40
@@ -102,6 +103,27 @@ class Oekoboiler:
         self._threshhold_gray = DEFAULT_THESHHOLD_GRAY
 
         self._image = dict()
+        self._frame = 0
+        self._quality = {
+            "time": {"status": "unknown", "confidence": None, "frame": None},
+            "set_temperature": {"status": "unknown", "confidence": None, "frame": None},
+            "water_temperature": {"status": "unknown", "confidence": None, "frame": None},
+            "mode": {"status": "unknown", "confidence": None, "frame": None},
+            "state": {"status": "unknown", "confidence": None, "frame": None},
+            "level": {"status": "unknown", "confidence": None, "frame": None},
+        }
+
+    def _set_quality(self, key: str, status: str, confidence: Optional[float] = None):
+        self._quality[key] = {
+            "status": status,
+            "confidence": round(confidence, 3) if confidence is not None else None,
+            "frame": self._frame,
+        }
+
+    def _set_failed_quality(self, key: str, confidence: Optional[float] = None):
+        previous_status = self._quality.get(key, {}).get("status")
+        status = "stale" if previous_status == "ok" else "unknown"
+        self._set_quality(key, status, confidence)
 
 
     def setBoundries(self, boundries):
@@ -125,6 +147,7 @@ class Oekoboiler:
     def processImage(self, original_image):
         _LOGGER.debug("Processing image")
         _LOGGER.debug("Boundries {}".format(self._boundries))
+        self._frame += 1
 
         w, h = original_image.size
 
@@ -135,97 +158,133 @@ class Oekoboiler:
         #Time
         img_time = self._cropToBoundry(image, self._boundries["time"], removeBlue=True)
         try:
-            digits, value = self._findDigits(img_time, "time", numDigits=4, withSeperator=True)
-            if len(digits) == 4:
+            digits, value, confidence = self._findDigits(img_time, "time", numDigits=4, withSeperator=True)
+            if len(digits) == 4 and all(digit is not None for digit in digits):
                 self._time = "{}{}:{}{}".format(digits[0],digits[1],digits[2],digits[3])
+                self._set_quality("time", "ok", confidence)
+            else:
+                self._time = None
+                self._set_failed_quality("time", confidence)
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
             self._time  = None
+            self._set_failed_quality("time")
 
         # Set Temperature 
         img_setTemp = self._cropToBoundry(image, self._boundries["setTemp"])
         try:
-            digit, value = self._findDigits(img_setTemp, "setTemp", numDigits=2)
+            digits, value, confidence = self._findDigits(img_setTemp, "setTemp", numDigits=2)
             _LOGGER.debug("Set Temperature read: {}".format(value))
-            if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
+            if value is not None and value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
                 self._setTemperature = value
+                self._set_quality("set_temperature", "ok", confidence)
+            else:
+                self._set_failed_quality("set_temperature", confidence)
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Set Temperature value: %s", exc_info=1)
-            #self._setTemperature = None
+            self._set_failed_quality("set_temperature")
 
 
 
         # Water Temperature
         img_waterTemp = self._cropToBoundry(image, self._boundries["waterTemp"])
         try:
-            digits,value = self._findDigits(img_waterTemp, "waterTemp", numDigits=2)
+            digits, value, confidence = self._findDigits(img_waterTemp, "waterTemp", numDigits=2)
             _LOGGER.debug("Water Temperature read: {}".format(value))
-            if value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
+            if value is not None and value >= TEMPTERATURE_LOWER_VALID and value <= TEMPTERATURE_UPPER_VALID:
                 self._waterTemperature = value
+                self._set_quality("water_temperature", "ok", confidence)
+            else:
+                self._set_failed_quality("water_temperature", confidence)
         except Exception as error:
             _LOGGER.debug("Could not find digits for the Water Temperature value: %s", exc_info=1)
-            #self._waterTemperature = None
+            self._set_failed_quality("water_temperature")
 
 
 
         # Modus
         img_modeAuto = self._cropToBoundry(image, self._boundries["modeAuto"])
-        modeAuto = self._isIlluminated(img_modeAuto, "modeAuto")
+        modeAuto, modeAutoConf = self._isIlluminated(img_modeAuto, "modeAuto", with_confidence=True)
 
 
         img_modeEcon = self._cropToBoundry(image, self._boundries["modeEcon"])
-        modeEcon = self._isIlluminated(img_modeEcon, "modeEcon")
+        modeEcon, modeEconConf = self._isIlluminated(img_modeEcon, "modeEcon", with_confidence=True)
 
 
         img_modeHeater = self._cropToBoundry(image, self._boundries["modeHeater"])
-        modeHeater = self._isIlluminated(img_modeHeater, "modeHeater")
+        modeHeater, modeHeaterConf = self._isIlluminated(img_modeHeater, "modeHeater", with_confidence=True)
 
-
-        if modeAuto:
-            self._mode = "Auto"
-        
-        if modeEcon:
-            self._mode = "Econ"
-
-        if modeHeater:
-            self._mode = "Heater"
+        mode_candidates = [
+            ("Auto", modeAuto, modeAutoConf),
+            ("Econ", modeEcon, modeEconConf),
+            ("Heater", modeHeater, modeHeaterConf),
+        ]
+        active_modes = [candidate for candidate in mode_candidates if candidate[1]]
+        if len(active_modes) == 1:
+            self._mode = active_modes[0][0]
+            self._set_quality("mode", "ok", active_modes[0][2])
+        else:
+            best_confidence = max((candidate[2] for candidate in mode_candidates), default=0.0)
+            self._set_failed_quality("mode", best_confidence)
 
         _LOGGER.debug("Mode read: {}".format(self._mode))
 
         # Indicators
         img_warmIndicator = self._cropToBoundry(image, self._boundries["indicatorWarm"], removeBlue=True)
-        self._indicator["warm"] = self._isIlluminated(img_warmIndicator, "indicatorWarm")
+        self._indicator["warm"], warmConf = self._isIlluminated(
+            img_warmIndicator,
+            "indicatorWarm",
+            with_confidence=True,
+        )
 
 
         img_defIndicator = self._cropToBoundry(image, self._boundries["indicatorDef"], removeBlue=True)
-        self._indicator["def"] = self._isIlluminated(img_defIndicator, "indicatorDef")
+        self._indicator["def"], defConf = self._isIlluminated(
+            img_defIndicator,
+            "indicatorDef",
+            with_confidence=True,
+        )
 
 
         img_htgIndicator = self._cropToBoundry(image, self._boundries["indicatorHtg"], removeBlue=True)
-        self._indicator["htg"] = self._isIlluminated(img_htgIndicator, "indicatorHtg")
+        self._indicator["htg"], htgConf = self._isIlluminated(
+            img_htgIndicator,
+            "indicatorHtg",
+            with_confidence=True,
+        )
 
 
         img_offIndicator = self._cropToBoundry(image, self._boundries["indicatorOff"], removeBlue=True)
-        self._indicator["off"] = self._isIlluminated(img_offIndicator, "indicatorOff")
+        self._indicator["off"], offConf = self._isIlluminated(
+            img_offIndicator,
+            "indicatorOff",
+            with_confidence=True,
+        )
 
-        if self._indicator["warm"]:
-            self._state = "Warm"
-
-        if self._indicator["def"]:
-            self._state = "Defrosting"
-
-        if self._indicator["htg"]:
-            self._state = "Heating"
-
-        if self._indicator["off"]:
-            self._state = "Off"
+        state_candidates = [
+            ("Warm", self._indicator["warm"], warmConf),
+            ("Defrosting", self._indicator["def"], defConf),
+            ("Heating", self._indicator["htg"], htgConf),
+            ("Off", self._indicator["off"], offConf),
+        ]
+        active_states = [candidate for candidate in state_candidates if candidate[1]]
+        if len(active_states) == 1:
+            self._state = active_states[0][0]
+            self._set_quality("state", "ok", active_states[0][2])
+        else:
+            best_confidence = max((candidate[2] for candidate in state_candidates), default=0.0)
+            self._set_failed_quality("state", best_confidence)
 
         # High Temp Indicator
         img_highTempIndicator = self._cropToBoundry(image, self._boundries["indicatorHighTemp"], removeBlue=True)
         self._indicator["highTemp"] = self._isIlluminated(img_highTempIndicator, "indicatorHighTemp")
 
         img_level = self._cropToBoundry(image, self._boundries["level"])
-        self._level = self._getLevel(img_level)
+        try:
+            self._level = self._getLevel(img_level)
+            self._set_quality("level", "ok", 1.0)
+        except Exception:
+            self._set_failed_quality("level")
 
 
         self.updatedProcessedImage(original_image)
@@ -268,7 +327,7 @@ class Oekoboiler:
         return level * 100
 
 
-    def _isIlluminated(self, image, title=""):
+    def _isIlluminated(self, image, title="", with_confidence=False):
 
 
         w,h = image.size
@@ -280,6 +339,10 @@ class Oekoboiler:
 
         _LOGGER.debug("{} NonZero {}, Threshhold {}".format(title, nonZeroValue, threshold))
 
+        confidence = 0.0
+        if threshold > 0:
+            confidence = min(1.0, nonZeroValue / threshold)
+
         if title is not None:
             if nonZeroValue > threshold:
                 h, w = image.size
@@ -288,7 +351,42 @@ class Oekoboiler:
 
             self._image[title] = thresh
 
-        return nonZeroValue > threshold
+        illuminated = nonZeroValue > threshold
+        if with_confidence:
+            return illuminated, confidence
+        return illuminated
+
+    @staticmethod
+    def _decode_segments(on_segments) -> tuple[Optional[int], float]:
+        """Decode a 7-segment activation tuple.
+
+        Returns a digit when there is an exact match or a unique, close match.
+        Returns None when the pattern is ambiguous.
+        """
+        pattern = tuple(on_segments)
+        digit = DIGITS_LOOKUP.get(pattern)
+        if digit is not None:
+            return digit, 1.0
+
+        ranked_candidates = []
+        for candidate_pattern, candidate_digit in DIGITS_LOOKUP.items():
+            distance = sum(
+                int(current != reference)
+                for current, reference in zip(pattern, candidate_pattern)
+            )
+            ranked_candidates.append((distance, candidate_digit))
+
+        ranked_candidates.sort(key=lambda item: item[0])
+        best_distance, best_digit = ranked_candidates[0]
+        second_best_distance = ranked_candidates[1][0] if len(ranked_candidates) > 1 else 7
+
+        confidence = max(0.0, 1 - (best_distance / 7))
+
+        # Accept a fuzzy match only when it is both close and unambiguous.
+        if best_distance <= 1 and best_distance < second_best_distance:
+            return best_digit, confidence
+
+        return None, confidence
 
 
     def _findDigits(self, image, title="", segment_resize_factor=1, numDigits = 2, withSeperator=False):
@@ -305,26 +403,31 @@ class Oekoboiler:
         if withSeperator:
             seperatorSize = w // numDigits // 4
         else:
-            seperatorSize = 0    
+            seperatorSize = 0
 
-        # Create rois based on the number of digit
-        rois = []
-        for i in range(0,numDigits):
+        rois = self._find_digit_rois_from_components(
+            thresh_image,
+            numDigits=numDigits,
+            withSeperator=withSeperator,
+        )
 
-            seperator = 0
-            # Shift for the seperator, assuming its in the middle
-            if i >= numDigits/2 and withSeperator:
-                seperator = seperatorSize
+        if rois is None:
+            # Fallback to the legacy equal-split approach when component detection
+            # cannot reliably identify all digits.
+            rois = []
+            for i in range(0, numDigits):
+                seperator = 0
+                # Shift for the seperator, assuming its in the middle
+                if i >= numDigits/2 and withSeperator:
+                    seperator = seperatorSize
 
-            #_LOGGER.debug("i: {}, seperator: {}".format(i, seperator))
+                roi = (
+                        (i * int((w-seperatorSize)/numDigits)) + seperator,
+                        0,
+                        ((i+1) * int((w-seperatorSize)/numDigits)) + seperator,
+                        h)
 
-            roi = (
-                    (i * int((w-seperatorSize)/numDigits)) + seperator,
-                    0, 
-                    ((i+1) * int((w-seperatorSize)/numDigits)) + seperator,
-                    h)
-
-            rois.append(roi)
+                rois.append(roi)
 
         #rois = [(0, 0, int(w/2), h), (int(w/2), 0, w, h)]
 
@@ -335,6 +438,7 @@ class Oekoboiler:
         #_LOGGER.debug("Rois: {}".format(rois))
 
         digits = []
+        confidence_scores = []
 
         # go trough all region of interest (digits)
         for roi in rois:
@@ -432,19 +536,104 @@ class Oekoboiler:
                 self._image["{}_segments".format(title)] = image
 
             # lookup the digit and draw it on the image
-            try:
-                digit = DIGITS_LOOKUP[tuple(on)]
-            except KeyError:
-                digit = 0
+            digit, confidence = self._decode_segments(on)
+            confidence_scores.append(confidence)
+
+            if digit is None:
+                _LOGGER.debug(
+                    "Title %s unknown digit for segments %s (confidence %.2f)",
+                    title,
+                    tuple(on),
+                    confidence,
+                )
             digits.append(digit)
 
         ## Return all contures and digits found + calcucate value with the digits
-        value = 0
-        num_digits = len(digits)
-        for i in range(num_digits):
-            value = value + digits[i] * (10**(num_digits-1-i))
+        if any(digit is None for digit in digits):
+            value = None
+        else:
+            value = 0
+            num_digits = len(digits)
+            for i in range(num_digits):
+                value = value + digits[i] * (10**(num_digits-1-i))
 
-        return digits, value
+        if confidence_scores:
+            _LOGGER.debug(
+                "Title %s average digit confidence %.2f",
+                title,
+                sum(confidence_scores) / len(confidence_scores),
+            )
+
+        avg_confidence = 0.0
+        if confidence_scores:
+            avg_confidence = sum(confidence_scores) / len(confidence_scores)
+
+        return digits, value, avg_confidence
+
+    def _find_digit_rois_from_components(self, thresh_image, numDigits=2, withSeperator=False):
+        """Find digit ROIs from a binarized image using connected regions.
+
+        The method uses a light dilation to connect segments of the same digit,
+        then derives contiguous x-runs that likely correspond to each digit.
+        Returns None if a reliable set of digit boxes cannot be found.
+        """
+        w, h = thresh_image.size
+        if w <= 0 or h <= 0 or numDigits <= 0:
+            return None
+
+        # Dilation helps connect seven-segment strokes into broader digit blobs.
+        work_image = thresh_image.filter(ImageFilter.MaxFilter(size=5))
+        pixels = work_image.load()
+
+        separator_start = -1
+        separator_end = -1
+        if withSeperator:
+            separator_half_width = max(1, w // (numDigits * 6))
+            center = w // 2
+            separator_start = max(0, center - separator_half_width)
+            separator_end = min(w - 1, center + separator_half_width)
+
+        min_column_pixels = max(1, h // 8)
+        min_run_width = max(2, w // (numDigits * 7))
+
+        runs = []
+        run_start = None
+
+        for x in range(w):
+            if separator_start <= x <= separator_end:
+                column_active = False
+            else:
+                lit_pixels = 0
+                for y in range(h):
+                    if pixels[x, y] > 0:
+                        lit_pixels += 1
+                column_active = lit_pixels >= min_column_pixels
+
+            if column_active and run_start is None:
+                run_start = x
+            elif not column_active and run_start is not None:
+                run_end = x - 1
+                if (run_end - run_start + 1) >= min_run_width:
+                    runs.append((run_start, run_end))
+                run_start = None
+
+        if run_start is not None:
+            run_end = w - 1
+            if (run_end - run_start + 1) >= min_run_width:
+                runs.append((run_start, run_end))
+
+        if len(runs) != numDigits:
+            return None
+
+        rois = []
+        for run_start, run_end in runs:
+            left = max(0, run_start - 1)
+            right = min(w, run_end + 2)
+            if right - left < 2:
+                return None
+            rois.append((left, 0, right, h))
+
+        return rois
 
 
     def _cropToBoundry(self, image, boundry, convertToGray=False, removeBlue=False):
@@ -497,6 +686,10 @@ class Oekoboiler:
     @property
     def level(self):
         return self._level
+
+    def get_quality(self, key: str):
+        quality = self._quality.get(key, {"status": "unknown", "confidence": None, "frame": None})
+        return dict(quality)
 
     @property
     def image(self):
@@ -615,6 +808,25 @@ if __name__ == "__main__":
                     print("High Temp {}".format(oekoboiler.indicator["highTemp"]))
 
                     print("Level {}".format(oekoboiler.level))
+
+                    print("Quality:")
+                    for quality_key in [
+                        "time",
+                        "set_temperature",
+                        "water_temperature",
+                        "mode",
+                        "state",
+                        "level",
+                    ]:
+                        quality = oekoboiler.get_quality(quality_key)
+                        print(
+                            "  {} -> status={}, confidence={}, frame={}".format(
+                                quality_key,
+                                quality.get("status"),
+                                quality.get("confidence"),
+                                quality.get("frame"),
+                            )
+                        )
 
                     processedImage = Image.open(io.BytesIO(oekoboiler.imageByteArray))
 
